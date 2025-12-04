@@ -57,11 +57,16 @@ class PlaywrightCrawler:
         try:
             page = await self.browser.new_page()
             
-            # Navigate to page
-            await page.goto(url, wait_until="networkidle", timeout=30000)
+            # Navigate to page with longer timeout and domcontentloaded instead of networkidle
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            except Exception as e:
+                # If timeout, try with load instead
+                logger.debug(f"Timeout with domcontentloaded, trying load: {url}")
+                await page.goto(url, wait_until="load", timeout=60000)
             
             # Wait for content to load
-            await page.wait_for_timeout(2000)
+            await page.wait_for_timeout(3000)
             
             # Find all links on the page
             links = await page.query_selector_all('a[href]')
