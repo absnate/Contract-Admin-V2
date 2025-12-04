@@ -87,6 +87,34 @@ class Schedule(BaseModel):
     next_run: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class BulkUploadJob(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    manufacturer_name: str
+    sharepoint_folder: str
+    status: str = "pending"  # pending, processing, downloading, uploading, completed, failed
+    total_items: int = 0
+    total_classified: int = 0
+    total_uploaded: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    error_message: Optional[str] = None
+
+class BulkUploadPDF(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    job_id: str
+    part_number: str
+    filename: str
+    source_url: str
+    file_size: int
+    is_technical: bool
+    classification_reason: str
+    document_type: Optional[str] = None
+    sharepoint_uploaded: bool = False
+    sharepoint_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Routes
 @api_router.get("/")
 async def root():
