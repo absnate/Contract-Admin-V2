@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import NewJob from './pages/NewJob';
 import JobDetails from './pages/JobDetails';
 import Schedules from './pages/Schedules';
+import BulkUpload from './pages/BulkUpload';
+import BulkUploadDetails from './pages/BulkUploadDetails';
 import '@/App.css';
 
 const queryClient = new QueryClient();
@@ -20,6 +22,8 @@ function App() {
             <Route path="/new-job" element={<NewJob />} />
             <Route path="/job/:jobId" element={<JobDetails />} />
             <Route path="/schedules" element={<Schedules />} />
+            <Route path="/bulk-upload" element={<BulkUpload />} />
+            <Route path="/bulk-upload/:jobId" element={<BulkUploadDetails />} />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />
