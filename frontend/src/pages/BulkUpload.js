@@ -229,11 +229,7 @@ const BulkUpload = () => {
                 </li>
                 <li className="flex gap-3">
                   <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Gemini AI classifies each PDF</span>
-                </li>
-                <li className="flex gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Technical PDFs uploaded to SharePoint</span>
+                  <span>All PDFs uploaded to SharePoint (no AI classification needed)</span>
                 </li>
               </ol>
             </Card>
