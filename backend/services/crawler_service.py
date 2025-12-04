@@ -140,15 +140,39 @@ class CrawlerService:
     def _is_relevant_url(self, url: str, product_lines: List[str]) -> bool:
         """Check if URL is likely to contain technical documentation"""
         url_lower = url.lower()
-        relevant_keywords = ['product', 'document', 'download', 'resource', 'support', 'technical', 'data', 'spec', 'manual', 'pdf']
+        
+        # Expanded list of relevant keywords for manufacturer sites
+        relevant_keywords = [
+            'product', 'document', 'download', 'resource', 'support', 'technical', 
+            'data', 'spec', 'manual', 'pdf', 'literature', 'catalog', 'media',
+            'file', 'doc', 'sheet', 'library', 'asset', 'datasheet', 'brochure',
+            'install', 'guide', 'submittal'
+        ]
+        
+        # URLs to avoid (common site structure that won't have PDFs)
+        avoid_keywords = [
+            'login', 'cart', 'checkout', 'account', 'register', 'signin',
+            'facebook', 'twitter', 'linkedin', 'youtube', 'instagram',
+            'privacy', 'terms', 'cookie', 'sitemap', 'search', 'contact',
+            'blog', 'news', 'press', 'careers', 'jobs'
+        ]
+        
+        # Skip URLs with avoid keywords
+        if any(avoid in url_lower for avoid in avoid_keywords):
+            return False
+        
+        # If product lines specified, prioritize URLs containing them
+        if product_lines:
+            matches_product = any(pl.lower() in url_lower for pl in product_lines)
+            if matches_product:
+                return True
         
         # Check if URL contains relevant keywords
         has_relevant_keyword = any(keyword in url_lower for keyword in relevant_keywords)
         
-        # Check if URL matches product lines
-        matches_product = not product_lines or any(pl.lower() in url_lower for pl in product_lines)
-        
-        return has_relevant_keyword and matches_product
+        # If no product lines specified, accept any relevant URL
+        # If product lines specified, also accept URLs with relevant keywords
+        return has_relevant_keyword or not product_lines
     
     async def _classify_pdfs(self, job_id: str, pdf_links: Set[str], product_lines: List[str], manufacturer_name: str):
         """Classify PDFs using AI"""
