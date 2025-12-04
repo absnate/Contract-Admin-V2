@@ -203,7 +203,11 @@ class CrawlerService:
         """Classify PDFs using AI"""
         classified_count = 0
         
-        for pdf_url in pdf_links:
+        # Convert set to list to avoid "set changed size during iteration" error
+        pdf_links_list = list(pdf_links)
+        logger.info(f"Starting classification of {len(pdf_links_list)} PDFs")
+        
+        for pdf_url in pdf_links_list:
             try:
                 # Download PDF metadata (first few KB)
                 async with aiohttp.ClientSession() as session:
