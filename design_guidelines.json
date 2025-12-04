@@ -1,0 +1,169 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "archetype": "Swiss Control Room",
+    "vibe": "Precision, Authority, Industrial, Automated",
+    "principles": [
+      "Fusion over Imitation: Mix Swiss Poster aesthetics with Industrial Control Panels.",
+      "Content is King: Data density is a feature, not a bug. Make it scannable.",
+      "Contrast: Stark Black/White with Safety Orange accents.",
+      "Negative Space: Use it to group logic, not just for decoration."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "IBM Plex Sans",
+        "weights": ["500", "600", "700"],
+        "usage": "Page titles, Section headers, Modal titles"
+      },
+      "body": {
+        "family": "Inter",
+        "weights": ["400", "500"],
+        "usage": "General UI text, descriptions, form labels"
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["400", "500"],
+        "usage": "IDs, Dates, Logs, File paths, Status codes"
+      }
+    },
+    "rules": [
+      "Headings must be tight: tracking-tight",
+      "Labels must be uppercase and wide: uppercase tracking-widest text-xs font-medium text-muted-foreground",
+      "Data cells must be mono: font-mono text-sm"
+    ]
+  },
+  "colors": {
+    "palette": {
+      "light": {
+        "background": "#ffffff",
+        "foreground": "#09090b",
+        "card": "#ffffff",
+        "card_foreground": "#09090b",
+        "popover": "#ffffff",
+        "popover_foreground": "#09090b",
+        "primary": "#f97316",
+        "primary_foreground": "#ffffff",
+        "secondary": "#f4f4f5",
+        "secondary_foreground": "#18181b",
+        "muted": "#f4f4f5",
+        "muted_foreground": "#71717a",
+        "accent": "#f4f4f5",
+        "accent_foreground": "#18181b",
+        "destructive": "#ef4444",
+        "destructive_foreground": "#ffffff",
+        "border": "#e4e4e7",
+        "input": "#e4e4e7",
+        "ring": "#f97316"
+      },
+      "dark": {
+        "background": "#09090b",
+        "foreground": "#fafafa",
+        "card": "#09090b",
+        "card_foreground": "#fafafa",
+        "popover": "#09090b",
+        "popover_foreground": "#fafafa",
+        "primary": "#f97316",
+        "primary_foreground": "#ffffff",
+        "secondary": "#27272a",
+        "secondary_foreground": "#fafafa",
+        "muted": "#27272a",
+        "muted_foreground": "#a1a1aa",
+        "accent": "#27272a",
+        "accent_foreground": "#fafafa",
+        "destructive": "#7f1d1d",
+        "destructive_foreground": "#fafafa",
+        "border": "#27272a",
+        "input": "#27272a",
+        "ring": "#f97316"
+      }
+    },
+    "usage_rules": [
+      "Primary Color (Safety Orange) is ONLY for the main 'Call to Action' (e.g., 'Start Crawl', 'Upload').",
+      "Status Colors: Success = Emerald-500, Error = Red-500, Warning = Amber-500, Info = Blue-500.",
+      "Borders: Use borders to define structure. No shadows in 'Swiss Mode'.",
+      "Gradients: FORBIDDEN. Use solid colors only."
+    ]
+  },
+  "layout": {
+    "grid_system": "Mode B: The Control Room Grid",
+    "container": "max-w-[1600px] mx-auto p-6",
+    "spacing": {
+      "section_gap": "gap-8",
+      "card_padding": "p-6",
+      "internal_gap": "gap-4"
+    },
+    "strategies": [
+      "Dashboard Home: 4-column grid. Summary cards (col-span-1), Recent Activity (col-span-2 row-span-2).",
+      "Forms: Single column max-w-2xl for focus, or 2-column 'Split View' (Form Left, Preview/Instructions Right).",
+      "Lists: Full width tables with sticky headers."
+    ]
+  },
+  "components": {
+    "cards": {
+      "style": "border border-border bg-card text-card-foreground shadow-none rounded-md",
+      "hover": "hover:border-primary/50 transition-colors duration-200"
+    },
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-none rounded-md font-medium",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-none rounded-md",
+      "ghost": "hover:bg-accent hover:text-accent-foreground rounded-md",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md"
+    },
+    "inputs": {
+      "style": "rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "tables": {
+      "style": "w-full caption-bottom text-sm",
+      "header": "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "row": "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Subtle noise overlay on the background (opacity 0.02) to reduce digital flatness.",
+    "icons": "Lucide React (default). Use stroke-width={1.5} for a technical look.",
+    "empty_states": "Use abstract architectural line art or simple geometric shapes.",
+    "loading_states": "Skeleton loaders with a 'shimmer' effect. No spinning circles unless absolutely necessary."
+  },
+  "motion": {
+    "duration": "duration-200",
+    "easing": "ease-out",
+    "types": [
+      "Hover: Color shift or border darken.",
+      "Modal: Scale in (0.95 to 1) + Fade in.",
+      "Page Load: Fade in (opacity 0 to 1)."
+    ]
+  },
+  "image_urls": {
+    "hero_abstract": [
+      {
+        "url": "https://images.unsplash.com/photo-1727954416531-4d5eb4421d3a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwYXJjaGl0ZWN0dXJhbCUyMGJsdWVwcmludCUyMGFic3RyYWN0fGVufDB8fHx8MTc2NDg3NTc2Nnww&ixlib=rb-4.1.0&q=85",
+        "description": "White building with sky - Use for Login/Welcome screen background or side panel.",
+        "category": "abstract"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1540854304146-564f038a80c1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwYXJjaGl0ZWN0dXJhbCUyMGJsdWVwcmludCUyMGFic3RyYWN0fGVufDB8fHx8MTc2NDg3NTc2Nnww&ixlib=rb-4.1.0&q=85",
+        "description": "Green plant beside white house - Use for 'Success' states or empty dashboard placeholders.",
+        "category": "abstract"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add '@fontsource/ibm-plex-sans' and '@fontsource/jetbrains-mono' to package.json.",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js with the 'Swiss Control Room' colors and font families.",
+    "3. LAYOUT: Implement the 'Mode B' grid for the Dashboard Home.",
+    "4. COMPONENTS: Customize Shadcn components to remove excessive roundness (use rounded-md) and shadows.",
+    "5. DATA DISPLAY: Use Tables for PDF lists. Use Cards for Job Status.",
+    "6. THEME: Implement the Light/Dark mode toggle using 'next-themes' or similar provider.",
+    "7. ACCESSIBILITY: Ensure all text meets APCA contrast standards. Use 'data-testid' on all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients.",
+    "Do not use 'Inter' for headings.",
+    "Do not use 'Teal' colors.",
+    "Always use 'sonner' for toasts.",
+    "Always use 'lucide-react' for icons.",
+    "Ensure all interactive elements have hover states."
+  ]
+}
