@@ -55,6 +55,12 @@ const Dashboard = () => {
                 Schedules
               </Button>
             </Link>
+            <Link to="/bulk-upload">
+              <Button variant="outline" data-testid="bulk-upload-button">
+                <FileText className="w-4 h-4 mr-2" />
+                Bulk Upload
+              </Button>
+            </Link>
             <Link to="/new-job">
               <Button data-testid="new-job-button">
                 <Plus className="w-4 h-4 mr-2" />
