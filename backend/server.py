@@ -31,6 +31,7 @@ crawler_service = CrawlerService(db)
 pdf_classifier = PDFClassifier()
 sharepoint_service = SharePointService()
 scheduler_service = SchedulerService(db, crawler_service, pdf_classifier, sharepoint_service)
+bulk_upload_service = BulkUploadService(db)
 
 # Create the main app
 app = FastAPI(title="PDF DocSync Agent")
