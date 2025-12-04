@@ -96,6 +96,7 @@ class BulkUploadJob(BaseModel):
     total_items: int = 0
     total_classified: int = 0
     total_uploaded: int = 0
+    total_failed: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     error_message: Optional[str] = None
