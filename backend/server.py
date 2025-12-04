@@ -221,6 +221,83 @@ async def delete_schedule(schedule_id: str):
     
     return {"message": "Schedule deleted successfully"}
 
+@api_router.post("/bulk-upload", response_model=BulkUploadJob)
+async def create_bulk_upload(
+    manufacturer_name: str = Query(...),
+    sharepoint_folder: str = Query(...),
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None
+):
+    """Create a bulk upload job from Excel file"""
+    # Validate file type
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only Excel files (.xlsx, .xls) are allowed")
+    
+    # Create job
+    job = BulkUploadJob(manufacturer_name=manufacturer_name, sharepoint_folder=sharepoint_folder)
+    
+    # Save job to database
+    doc = job.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.bulk_upload_jobs.insert_one(doc)
+    
+    # Save uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+        content = await file.read()
+        tmp_file.write(content)
+        tmp_path = tmp_file.name
+    
+    # Start processing in background
+    background_tasks.add_task(
+        bulk_upload_service.process_excel_file,
+        job.id,
+        tmp_path,
+        manufacturer_name,
+        sharepoint_folder
+    )
+    
+    return job
+
+@api_router.get("/bulk-upload-jobs", response_model=List[BulkUploadJob])
+async def get_bulk_upload_jobs():
+    """Get all bulk upload jobs"""
+    jobs = await db.bulk_upload_jobs.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    for job in jobs:
+        if isinstance(job.get('created_at'), str):
+            job['created_at'] = datetime.fromisoformat(job['created_at'])
+        if isinstance(job.get('updated_at'), str):
+            job['updated_at'] = datetime.fromisoformat(job['updated_at'])
+    
+    return jobs
+
+@api_router.get("/bulk-upload-jobs/{job_id}", response_model=BulkUploadJob)
+async def get_bulk_upload_job(job_id: str):
+    """Get a specific bulk upload job"""
+    job = await db.bulk_upload_jobs.find_one({"id": job_id}, {"_id": 0})
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if isinstance(job.get('created_at'), str):
+        job['created_at'] = datetime.fromisoformat(job['created_at'])
+    if isinstance(job.get('updated_at'), str):
+        job['updated_at'] = datetime.fromisoformat(job['updated_at'])
+    
+    return job
+
+@api_router.get("/bulk-upload-jobs/{job_id}/pdfs", response_model=List[BulkUploadPDF])
+async def get_bulk_upload_pdfs(job_id: str):
+    """Get all PDFs for a specific bulk upload job"""
+    pdfs = await db.bulk_upload_pdfs.find({"job_id": job_id}, {"_id": 0}).to_list(1000)
+    
+    for pdf in pdfs:
+        if isinstance(pdf.get('created_at'), str):
+            pdf['created_at'] = datetime.fromisoformat(pdf['created_at'])
+    
+    return pdfs
+
 @api_router.get("/stats")
 async def get_stats():
     """Get dashboard statistics"""
@@ -231,13 +308,23 @@ async def get_stats():
     uploaded_pdfs = await db.pdf_records.count_documents({"sharepoint_uploaded": True})
     active_schedules = await db.schedules.count_documents({"enabled": True})
     
+    # Bulk upload stats
+    bulk_jobs = await db.bulk_upload_jobs.count_documents({})
+    bulk_pdfs = await db.bulk_upload_pdfs.count_documents({})
+    bulk_technical = await db.bulk_upload_pdfs.count_documents({"is_technical": True})
+    bulk_uploaded = await db.bulk_upload_pdfs.count_documents({"sharepoint_uploaded": True})
+    
     return {
         "total_jobs": total_jobs,
         "active_jobs": active_jobs,
         "total_pdfs": total_pdfs,
         "technical_pdfs": technical_pdfs,
         "uploaded_pdfs": uploaded_pdfs,
-        "active_schedules": active_schedules
+        "active_schedules": active_schedules,
+        "bulk_jobs": bulk_jobs,
+        "bulk_pdfs": bulk_pdfs,
+        "bulk_technical": bulk_technical,
+        "bulk_uploaded": bulk_uploaded
     }
 
 # Include the router
