@@ -1,11 +1,15 @@
 import asyncio
 import logging
+import os
 from typing import Set, List
 from urllib.parse import urljoin, urlparse
 from playwright.async_api import async_playwright, Page, Browser
 import re
 
 logger = logging.getLogger(__name__)
+
+# Set Playwright browser path
+os.environ['PLAYWRIGHT_BROWSERS_PATH'] = '/pw-browsers'
 
 class PlaywrightCrawler:
     def __init__(self):
