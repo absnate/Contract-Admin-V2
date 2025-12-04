@@ -117,9 +117,66 @@ class SharePointService:
     
     async def _ensure_folder_exists(self, token: str, site_id: str, drive_id: str, folder_path: str) -> str:
         """Ensure folder path exists, create if needed, and return folder ID"""
-        # For now, return root folder ID
-        # In production, implement folder creation logic
-        return "root"
+        # Clean up folder path
+        folder_path = folder_path.strip('/')
+        
+        if not folder_path:
+            return "root"
+        
+        # Split path into parts
+        path_parts = [p.strip() for p in folder_path.split('/') if p.strip()]
+        
+        current_parent_id = "root"
+        
+        # Navigate/create each folder in the path
+        for folder_name in path_parts:
+            try:
+                # Try to get the folder first
+                async with aiohttp.ClientSession() as session:
+                    # Search for folder by name under current parent
+                    url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{current_parent_id}/children"
+                    headers = {"Authorization": f"Bearer {token}"}
+                    
+                    async with session.get(url, headers=headers) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            # Look for existing folder
+                            folder_found = False
+                            for item in data.get('value', []):
+                                if item.get('name') == folder_name and 'folder' in item:
+                                    current_parent_id = item['id']
+                                    folder_found = True
+                                    logger.info(f"Found existing folder: {folder_name}")
+                                    break
+                            
+                            # Create folder if not found
+                            if not folder_found:
+                                create_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{current_parent_id}/children"
+                                create_data = {
+                                    "name": folder_name,
+                                    "folder": {},
+                                    "@microsoft.graph.conflictBehavior": "rename"
+                                }
+                                headers["Content-Type"] = "application/json"
+                                
+                                async with session.post(create_url, json=create_data, headers=headers) as create_response:
+                                    if create_response.status in [200, 201]:
+                                        folder_data = await create_response.json()
+                                        current_parent_id = folder_data['id']
+                                        logger.info(f"Created new folder: {folder_name}")
+                                    else:
+                                        error_text = await create_response.text()
+                                        logger.error(f"Failed to create folder {folder_name}: {error_text}")
+                                        # Continue with current parent if folder creation fails
+                        else:
+                            error_text = await response.text()
+                            logger.error(f"Failed to list folder contents: {error_text}")
+            
+            except Exception as e:
+                logger.error(f"Error ensuring folder exists for {folder_name}: {str(e)}")
+                # Continue with current parent on error
+        
+        return current_parent_id
     
     async def _upload_file(self, token: str, site_id: str, drive_id: str, folder_id: str, filename: str, content: bytes) -> str:
         """Upload file to SharePoint"""
