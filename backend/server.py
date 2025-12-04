@@ -1,15 +1,20 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
+from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
-import uuid
+from typing import List, Optional
 from datetime import datetime, timezone
+import os
+import logging
+import uuid
 
+# Import services
+from services.crawler_service import CrawlerService
+from services.pdf_classifier import PDFClassifier
+from services.sharepoint_service import SharePointService
+from services.scheduler_service import SchedulerService
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,54 +24,192 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Initialize services
+crawler_service = CrawlerService(db)
+pdf_classifier = PDFClassifier()
+sharepoint_service = SharePointService()
+scheduler_service = SchedulerService(db, crawler_service, pdf_classifier, sharepoint_service)
 
-# Create a router with the /api prefix
+# Create the main app
+app = FastAPI(title="PDF DocSync Agent")
 api_router = APIRouter(prefix="/api")
 
+# Models
+class CrawlJobCreate(BaseModel):
+    manufacturer_name: str
+    domain: str
+    product_lines: Optional[List[str]] = []
+    sharepoint_folder: str
+    weekly_recrawl: bool = False
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
+class CrawlJob(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    manufacturer_name: str
+    domain: str
+    product_lines: List[str]
+    sharepoint_folder: str
+    weekly_recrawl: bool
+    status: str = "pending"  # pending, crawling, classifying, uploading, completed, failed
+    total_pdfs_found: int = 0
+    total_pdfs_classified: int = 0
+    total_pdfs_uploaded: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    error_message: Optional[str] = None
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class PDFRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    job_id: str
+    filename: str
+    source_url: str
+    file_size: int
+    is_technical: bool
+    classification_reason: str
+    document_type: Optional[str] = None
+    sharepoint_uploaded: bool = False
+    sharepoint_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# Add your routes to the router instead of directly to app
+class Schedule(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    job_id: str
+    manufacturer_name: str
+    domain: str
+    cron_expression: str = "0 0 * * 0"  # Weekly on Sunday at midnight
+    enabled: bool = True
+    last_run: Optional[datetime] = None
+    next_run: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "PDF DocSync Agent API", "status": "running"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+@api_router.post("/crawl-jobs", response_model=CrawlJob)
+async def create_crawl_job(job_data: CrawlJobCreate, background_tasks: BackgroundTasks):
+    """Create a new crawl job"""
+    job = CrawlJob(**job_data.model_dump())
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
+    # Save to database
+    doc = job.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.crawl_jobs.insert_one(doc)
     
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    # Start crawling in background
+    background_tasks.add_task(
+        crawler_service.start_crawl,
+        job.id,
+        job.domain,
+        job.product_lines,
+        job.manufacturer_name,
+        job.sharepoint_folder
+    )
+    
+    # Schedule weekly recrawl if enabled
+    if job.weekly_recrawl:
+        schedule = Schedule(job_id=job.id, manufacturer_name=job.manufacturer_name, domain=job.domain)
+        schedule_doc = schedule.model_dump()
+        schedule_doc['created_at'] = schedule_doc['created_at'].isoformat()
+        if schedule_doc.get('last_run'):
+            schedule_doc['last_run'] = schedule_doc['last_run'].isoformat()
+        if schedule_doc.get('next_run'):
+            schedule_doc['next_run'] = schedule_doc['next_run'].isoformat()
+        await db.schedules.insert_one(schedule_doc)
+        await scheduler_service.schedule_job(job.id, job.domain, job.product_lines, job.manufacturer_name, job.sharepoint_folder)
+    
+    return job
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+@api_router.get("/crawl-jobs", response_model=List[CrawlJob])
+async def get_crawl_jobs():
+    """Get all crawl jobs"""
+    jobs = await db.crawl_jobs.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    for job in jobs:
+        if isinstance(job.get('created_at'), str):
+            job['created_at'] = datetime.fromisoformat(job['created_at'])
+        if isinstance(job.get('updated_at'), str):
+            job['updated_at'] = datetime.fromisoformat(job['updated_at'])
     
-    return status_checks
+    return jobs
 
-# Include the router in the main app
+@api_router.get("/crawl-jobs/{job_id}", response_model=CrawlJob)
+async def get_crawl_job(job_id: str):
+    """Get a specific crawl job"""
+    job = await db.crawl_jobs.find_one({"id": job_id}, {"_id": 0})
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if isinstance(job.get('created_at'), str):
+        job['created_at'] = datetime.fromisoformat(job['created_at'])
+    if isinstance(job.get('updated_at'), str):
+        job['updated_at'] = datetime.fromisoformat(job['updated_at'])
+    
+    return job
+
+@api_router.get("/crawl-jobs/{job_id}/pdfs", response_model=List[PDFRecord])
+async def get_job_pdfs(job_id: str):
+    """Get all PDFs for a specific job"""
+    pdfs = await db.pdf_records.find({"job_id": job_id}, {"_id": 0}).to_list(1000)
+    
+    for pdf in pdfs:
+        if isinstance(pdf.get('created_at'), str):
+            pdf['created_at'] = datetime.fromisoformat(pdf['created_at'])
+    
+    return pdfs
+
+@api_router.get("/schedules", response_model=List[Schedule])
+async def get_schedules():
+    """Get all schedules"""
+    schedules = await db.schedules.find({}, {"_id": 0}).to_list(1000)
+    
+    for schedule in schedules:
+        if isinstance(schedule.get('created_at'), str):
+            schedule['created_at'] = datetime.fromisoformat(schedule['created_at'])
+        if isinstance(schedule.get('last_run'), str):
+            schedule['last_run'] = datetime.fromisoformat(schedule['last_run'])
+        if isinstance(schedule.get('next_run'), str):
+            schedule['next_run'] = datetime.fromisoformat(schedule['next_run'])
+    
+    return schedules
+
+@api_router.delete("/schedules/{schedule_id}")
+async def delete_schedule(schedule_id: str):
+    """Delete a schedule"""
+    result = await db.schedules.delete_one({"id": schedule_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    await scheduler_service.remove_job(schedule_id)
+    
+    return {"message": "Schedule deleted successfully"}
+
+@api_router.get("/stats")
+async def get_stats():
+    """Get dashboard statistics"""
+    total_jobs = await db.crawl_jobs.count_documents({})
+    active_jobs = await db.crawl_jobs.count_documents({"status": {"$in": ["pending", "crawling", "classifying", "uploading"]}})
+    total_pdfs = await db.pdf_records.count_documents({})
+    technical_pdfs = await db.pdf_records.count_documents({"is_technical": True})
+    uploaded_pdfs = await db.pdf_records.count_documents({"sharepoint_uploaded": True})
+    active_schedules = await db.schedules.count_documents({"enabled": True})
+    
+    return {
+        "total_jobs": total_jobs,
+        "active_jobs": active_jobs,
+        "total_pdfs": total_pdfs,
+        "technical_pdfs": technical_pdfs,
+        "uploaded_pdfs": uploaded_pdfs,
+        "active_schedules": active_schedules
+    }
+
+# Include the router
 app.include_router(api_router)
 
 app.add_middleware(
@@ -84,6 +227,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup():
+    logger.info("Starting PDF DocSync Agent...")
+    # Initialize scheduler
+    await scheduler_service.start()
+    logger.info("Scheduler started")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    await scheduler_service.shutdown()
     client.close()
+    logger.info("Application shutdown complete")
