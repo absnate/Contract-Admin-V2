@@ -74,11 +74,51 @@ class CrawlerService:
         
         logger.info(f"Starting crawl of {base_domain} with max {max_pages} pages")
         
+        # First, try regular crawl to detect if site is JavaScript-heavy
         async with aiohttp.ClientSession() as session:
-            await self._crawl_page(session, domain, base_domain, product_lines, max_pages)
+            is_js_heavy = await self._is_javascript_site(session, domain)
+        
+        if is_js_heavy:
+            logger.info(f"{base_domain} appears to be JavaScript-heavy, using Playwright crawler")
+            playwright_crawler = PlaywrightCrawler()
+            pdf_urls = await playwright_crawler.crawl_domain(domain, product_lines, max_pages=100)
+            self.pdf_urls = pdf_urls
+            self.visited_urls = playwright_crawler.visited_urls
+        else:
+            logger.info(f"{base_domain} is static HTML, using fast crawler")
+            async with aiohttp.ClientSession() as session:
+                await self._crawl_page(session, domain, base_domain, product_lines, max_pages)
         
         logger.info(f"Crawl completed: visited {len(self.visited_urls)} pages, found {len(self.pdf_urls)} PDFs")
         return self.pdf_urls
+    
+    async def _is_javascript_site(self, session: aiohttp.ClientSession, url: str) -> bool:
+        """Detect if a site is JavaScript-heavy by checking for links in HTML"""
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status != 200:
+                    return False
+                
+                html = await response.text()
+                soup = BeautifulSoup(html, 'html.parser')
+                
+                # Count links
+                links = soup.find_all('a', href=True)
+                
+                # If very few links found, likely JavaScript site
+                if len(links) < 5:
+                    logger.info(f"Only {len(links)} links found in HTML - likely JavaScript site")
+                    return True
+                
+                return False
+        
+        except Exception as e:
+            logger.warning(f"Error detecting site type: {str(e)}")
+            return False
     
     async def _crawl_page(self, session: aiohttp.ClientSession, url: str, base_domain: str, product_lines: List[str], max_pages: int):
         """Recursively crawl a page for PDFs and links"""
