@@ -102,8 +102,8 @@ class BulkUploadService:
         return pdf_items
     
     async def _download_and_classify_pdfs(self, job_id: str, pdf_items: List[Dict], manufacturer_name: str):
-        """Download and classify PDFs"""
-        classified_count = 0
+        """Download PDFs (no AI classification needed for bulk upload)"""
+        processed_count = 0
         
         for item in pdf_items:
             try:
@@ -121,17 +121,8 @@ class BulkUploadService:
                             
                             file_size = int(response.headers.get('content-length', 0))
                             
-                            # Read first 100KB for classification
-                            content_sample = await response.content.read(102400)
-                            
-                            # Classify using AI
-                            classification = await self.pdf_classifier.classify_pdf(
-                                filename=filename,
-                                url=pdf_url,
-                                content_sample=content_sample,
-                                manufacturer=manufacturer_name,
-                                product_lines=[]
-                            )
+                            # For bulk upload, all PDFs are assumed to be technical product data
+                            # No AI classification needed since user explicitly provided technical data URLs
                             
                             # Save PDF record
                             pdf_record = {
@@ -141,28 +132,28 @@ class BulkUploadService:
                                 "filename": filename,
                                 "source_url": pdf_url,
                                 "file_size": file_size,
-                                "is_technical": classification['is_technical'],
-                                "classification_reason": classification['reason'],
-                                "document_type": classification.get('document_type'),
+                                "is_technical": True,  # Always true for bulk upload
+                                "classification_reason": "Bulk upload - user-provided technical product data",
+                                "document_type": "Technical Product Data Sheet",
                                 "sharepoint_uploaded": False,
                                 "sharepoint_id": None,
                                 "created_at": datetime.now(timezone.utc).isoformat()
                             }
                             
                             await self.db.bulk_upload_pdfs.insert_one(pdf_record)
-                            classified_count += 1
+                            processed_count += 1
                             
-                            logger.info(f"Classified PDF for part {part_number}: {filename} - Technical: {classification['is_technical']}")
+                            logger.info(f"Downloaded PDF for part {part_number}: {filename}")
                         else:
                             logger.warning(f"Failed to download PDF for part {part_number}: HTTP {response.status}")
             
             except Exception as e:
                 logger.error(f"Error processing part {item.get('part_number')}: {str(e)}")
         
-        # Update job with classified count
+        # Update job with processed count
         await self.db.bulk_upload_jobs.update_one(
             {"id": job_id},
-            {"$set": {"total_classified": classified_count, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {"total_classified": processed_count, "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
     
     async def _upload_to_sharepoint(self, job_id: str, sharepoint_folder: str):
