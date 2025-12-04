@@ -64,8 +64,8 @@ const BulkUpload = () => {
   };
 
   const downloadTemplate = () => {
-    // Create a sample CSV content
-    const csvContent = 'Part Number,PDF URL\nPART-001,https://example.com/datasheet1.pdf\nPART-002,https://example.com/datasheet2.pdf\nPART-003,https://example.com/datasheet3.pdf';
+    // Create a sample CSV content matching the user's format
+    const csvContent = 'Part Number,Technical Product Data\n8570-001420,https://www.example.com/datasheet1.pdf\n926-120000,https://www.example.com/datasheet2.pdf\n356-000000,https://www.example.com/manual.pdf';
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
