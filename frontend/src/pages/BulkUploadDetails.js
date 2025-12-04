@@ -164,7 +164,6 @@ const BulkUploadDetails = () => {
             </div>
           </Card>
         )}
-        </div>
 
         {/* PDF List */}
         <Card className="border border-border bg-card shadow-none rounded-md">
