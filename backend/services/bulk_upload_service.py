@@ -104,6 +104,7 @@ class BulkUploadService:
     async def _download_and_classify_pdfs(self, job_id: str, pdf_items: List[Dict], manufacturer_name: str):
         """Download PDFs (no AI classification needed for bulk upload)"""
         processed_count = 0
+        failed_count = 0
         
         for item in pdf_items:
             try:
@@ -137,6 +138,8 @@ class BulkUploadService:
                                 "document_type": "Technical Product Data Sheet",
                                 "sharepoint_uploaded": False,
                                 "sharepoint_id": None,
+                                "download_status": "success",
+                                "error_message": None,
                                 "created_at": datetime.now(timezone.utc).isoformat()
                             }
                             
@@ -145,15 +148,58 @@ class BulkUploadService:
                             
                             logger.info(f"Downloaded PDF for part {part_number}: {filename}")
                         else:
-                            logger.warning(f"Failed to download PDF for part {part_number}: HTTP {response.status}")
+                            # Save failed record
+                            failed_count += 1
+                            filename = pdf_url.split('/')[-1] if '/' in pdf_url else f"{part_number}.pdf"
+                            pdf_record = {
+                                "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
+                                "job_id": job_id,
+                                "part_number": part_number,
+                                "filename": filename,
+                                "source_url": pdf_url,
+                                "file_size": 0,
+                                "is_technical": True,
+                                "classification_reason": "Bulk upload - user-provided technical product data",
+                                "document_type": "Technical Product Data Sheet",
+                                "sharepoint_uploaded": False,
+                                "sharepoint_id": None,
+                                "download_status": "failed",
+                                "error_message": f"HTTP {response.status} - URL not accessible",
+                                "created_at": datetime.now(timezone.utc).isoformat()
+                            }
+                            await self.db.bulk_upload_pdfs.insert_one(pdf_record)
+                            logger.warning(f"Failed to download PDF for part {part_number}: HTTP {response.status} - {pdf_url}")
             
             except Exception as e:
+                failed_count += 1
                 logger.error(f"Error processing part {item.get('part_number')}: {str(e)}")
+                # Save error record
+                pdf_record = {
+                    "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
+                    "job_id": job_id,
+                    "part_number": item.get('part_number', 'Unknown'),
+                    "filename": f"{item.get('part_number', 'unknown')}.pdf",
+                    "source_url": item.get('url', ''),
+                    "file_size": 0,
+                    "is_technical": True,
+                    "classification_reason": "Bulk upload - user-provided technical product data",
+                    "document_type": "Technical Product Data Sheet",
+                    "sharepoint_uploaded": False,
+                    "sharepoint_id": None,
+                    "download_status": "failed",
+                    "error_message": str(e),
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await self.db.bulk_upload_pdfs.insert_one(pdf_record)
         
-        # Update job with processed count
+        # Update job with processed and failed counts
         await self.db.bulk_upload_jobs.update_one(
             {"id": job_id},
-            {"$set": {"total_classified": processed_count, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {
+                "total_classified": processed_count,
+                "total_failed": failed_count,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
         )
     
     async def _upload_to_sharepoint(self, job_id: str, sharepoint_folder: str):
