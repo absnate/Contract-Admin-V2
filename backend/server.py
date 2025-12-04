@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
@@ -9,12 +9,14 @@ from datetime import datetime, timezone
 import os
 import logging
 import uuid
+import tempfile
 
 # Import services
 from services.crawler_service import CrawlerService
 from services.pdf_classifier import PDFClassifier
 from services.sharepoint_service import SharePointService
 from services.scheduler_service import SchedulerService
+from services.bulk_upload_service import BulkUploadService
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
