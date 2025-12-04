@@ -181,7 +181,12 @@ class SharePointService:
     async def _upload_file(self, token: str, site_id: str, drive_id: str, folder_id: str, filename: str, content: bytes) -> str:
         """Upload file to SharePoint"""
         async with aiohttp.ClientSession() as session:
-            url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{folder_id}:/{filename}:/content"
+            # Use folder_id to upload directly to that folder
+            if folder_id == "root":
+                url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/root:/{filename}:/content"
+            else:
+                url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{folder_id}:/{filename}:/content"
+            
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/pdf"
@@ -190,6 +195,7 @@ class SharePointService:
             async with session.put(url, data=content, headers=headers) as response:
                 if response.status in [200, 201]:
                     data = await response.json()
+                    logger.info(f"File uploaded successfully to folder {folder_id}: {filename}")
                     return data['id']
                 else:
                     error_text = await response.text()
