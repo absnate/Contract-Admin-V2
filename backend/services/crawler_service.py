@@ -60,7 +60,7 @@ class CrawlerService:
                 }}
             )
     
-    async def _crawl_domain(self, domain: str, product_lines: List[str], max_pages: int = 100) -> Set[str]:
+    async def _crawl_domain(self, domain: str, product_lines: List[str], max_pages: int = 500) -> Set[str]:
         """Crawl a domain to find PDF links"""
         self.visited_urls.clear()
         self.pdf_urls.clear()
@@ -71,9 +71,12 @@ class CrawlerService:
         
         base_domain = urlparse(domain).netloc
         
+        logger.info(f"Starting crawl of {base_domain} with max {max_pages} pages")
+        
         async with aiohttp.ClientSession() as session:
             await self._crawl_page(session, domain, base_domain, product_lines, max_pages)
         
+        logger.info(f"Crawl completed: visited {len(self.visited_urls)} pages, found {len(self.pdf_urls)} PDFs")
         return self.pdf_urls
     
     async def _crawl_page(self, session: aiohttp.ClientSession, url: str, base_domain: str, product_lines: List[str], max_pages: int):
