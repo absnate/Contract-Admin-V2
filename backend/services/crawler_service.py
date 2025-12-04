@@ -7,6 +7,7 @@ from typing import List, Set
 from datetime import datetime, timezone
 from .pdf_classifier import PDFClassifier
 from .sharepoint_service import SharePointService
+from .playwright_crawler import PlaywrightCrawler
 
 logger = logging.getLogger(__name__)
 
