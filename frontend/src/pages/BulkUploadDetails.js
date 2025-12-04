@@ -149,6 +149,23 @@ const BulkUploadDetails = () => {
           </Card>
         </div>
 
+        {/* Failed Downloads Warning */}
+        {job.total_failed > 0 && (
+          <Card className="border border-destructive/20 bg-destructive/5 shadow-none rounded-md p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-sm text-destructive mb-2">Failed Downloads</h3>
+                <p className="text-sm text-muted-foreground">
+                  {job.total_failed} PDF{job.total_failed > 1 ? 's' : ''} could not be downloaded (HTTP 404 or other errors). 
+                  Check the URLs in your source file or contact the manufacturer.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+        </div>
+
         {/* PDF List */}
         <Card className="border border-border bg-card shadow-none rounded-md">
           <div className="p-6 border-b border-border">
