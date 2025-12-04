@@ -229,7 +229,7 @@ const BulkUploadDetails = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-muted-foreground">
+                    <td colSpan="7" className="p-8 text-center text-muted-foreground">
                       <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
                       <p>No PDFs processed yet. Upload is in progress...</p>
                     </td>
