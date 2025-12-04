@@ -177,10 +177,10 @@ const BulkUploadDetails = () => {
                 <tr>
                   <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Part Number</th>
                   <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Filename</th>
-                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Document Type</th>
-                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Classification</th>
-                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Download</th>
+                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Upload Status</th>
                   <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground font-mono">Size</th>
+                  <th className="text-left p-4 text-xs uppercase tracking-widest font-medium text-muted-foreground">Error</th>
                 </tr>
               </thead>
               <tbody>
