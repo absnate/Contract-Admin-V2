@@ -199,14 +199,13 @@ const BulkUploadDetails = () => {
                           {pdf.filename}
                         </a>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground">{pdf.document_type || 'N/A'}</td>
                       <td className="p-4">
-                        {pdf.is_technical ? (
+                        {pdf.download_status === 'success' ? (
                           <Badge variant="default" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                            Technical
+                            Success
                           </Badge>
                         ) : (
-                          <Badge variant="secondary">Marketing</Badge>
+                          <Badge variant="destructive">Failed</Badge>
                         )}
                       </td>
                       <td className="p-4">
@@ -214,12 +213,17 @@ const BulkUploadDetails = () => {
                           <Badge variant="default" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
                             Uploaded
                           </Badge>
+                        ) : pdf.download_status === 'failed' ? (
+                          <Badge variant="outline" className="text-muted-foreground">Skipped</Badge>
                         ) : (
                           <Badge variant="outline">Pending</Badge>
                         )}
                       </td>
                       <td className="p-4 font-mono text-sm text-muted-foreground">
-                        {(pdf.file_size / 1024).toFixed(1)} KB
+                        {pdf.file_size > 0 ? `${(pdf.file_size / 1024).toFixed(1)} KB` : '-'}
+                      </td>
+                      <td className="p-4 text-xs text-destructive">
+                        {pdf.error_message || '-'}
                       </td>
                     </tr>
                   ))
