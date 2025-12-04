@@ -114,6 +114,8 @@ class BulkUploadPDF(BaseModel):
     document_type: Optional[str] = None
     sharepoint_uploaded: bool = False
     sharepoint_id: Optional[str] = None
+    download_status: str = "success"  # success, failed
+    error_message: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Routes
