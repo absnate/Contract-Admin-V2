@@ -194,11 +194,11 @@ const BulkUpload = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="font-mono text-primary font-medium">2.</span>
-                  <span>Column A: Part Number (e.g., PART-001)</span>
+                  <span>Column A: Part Number (e.g., 8570-001420)</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="font-mono text-primary font-medium">3.</span>
-                  <span>Column B: Full URL to PDF file</span>
+                  <span>Column B: Technical Product Data (Full URL to PDF)</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="font-mono text-primary font-medium">4.</span>
