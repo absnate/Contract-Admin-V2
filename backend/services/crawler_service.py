@@ -86,17 +86,27 @@ class CrawlerService:
         
         self.visited_urls.add(url)
         
+        # Log progress every 10 pages
+        if len(self.visited_urls) % 10 == 0:
+            logger.info(f"Crawl progress: {len(self.visited_urls)} pages visited, {len(self.pdf_urls)} PDFs found")
+        
         try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30), allow_redirects=True) as response:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30), allow_redirects=True, headers=headers) as response:
                 if response.status != 200:
+                    logger.debug(f"Skipping {url} - Status {response.status}")
                     return
                 
                 content_type = response.headers.get('content-type', '').lower()
                 
                 # If it's a PDF, add it
                 if 'application/pdf' in content_type or url.lower().endswith('.pdf'):
-                    self.pdf_urls.add(url)
-                    logger.info(f"Found PDF: {url}")
+                    if self._matches_product_lines(url, '', product_lines):
+                        self.pdf_urls.add(url)
+                        logger.info(f"Found PDF: {url}")
                     return
                 
                 # Only process HTML pages
@@ -107,9 +117,17 @@ class CrawlerService:
                 soup = BeautifulSoup(html, 'html.parser')
                 
                 # Find all links
+                links_to_crawl = []
                 for link in soup.find_all('a', href=True):
                     href = link.get('href')
                     full_url = urljoin(url, href)
+                    
+                    # Skip anchors, javascript, mailto, tel
+                    if full_url.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
+                        continue
+                    
+                    # Remove URL fragments
+                    full_url = full_url.split('#')[0]
                     
                     # Check if it's a PDF
                     if full_url.lower().endswith('.pdf'):
@@ -123,9 +141,16 @@ class CrawlerService:
                     if urlparse(full_url).netloc == base_domain and full_url not in self.visited_urls:
                         # Check if URL might lead to product documentation
                         if self._is_relevant_url(full_url, product_lines):
-                            await asyncio.sleep(1)  # Be polite
-                            await self._crawl_page(session, full_url, base_domain, product_lines, max_pages)
+                            links_to_crawl.append(full_url)
+                
+                # Crawl collected links
+                for next_url in links_to_crawl[:5]:  # Limit breadth to avoid too many branches
+                    if len(self.visited_urls) < max_pages:
+                        await asyncio.sleep(0.5)  # Be polite
+                        await self._crawl_page(session, next_url, base_domain, product_lines, max_pages)
         
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout crawling {url}")
         except Exception as e:
             logger.warning(f"Error crawling {url}: {str(e)}")
     
