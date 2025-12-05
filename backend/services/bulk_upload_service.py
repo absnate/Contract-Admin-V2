@@ -270,3 +270,8 @@ class BulkUploadService:
             {"id": job_id},
             {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
+    
+    async def _is_job_cancelled(self, job_id: str) -> bool:
+        """Check if job has been cancelled"""
+        job = await self.db.bulk_upload_jobs.find_one({"id": job_id}, {"_id": 0, "status": 1})
+        return job and job.get("status") == "cancelled"
