@@ -264,6 +264,11 @@ class CrawlerService:
         logger.info(f"Starting classification of {len(pdf_links_list)} PDFs")
         
         for pdf_url in pdf_links_list:
+            # Check if job was cancelled before each classification
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Crawl job {job_id} was cancelled during classification phase")
+                return
+            
             try:
                 # Download PDF metadata (first few KB)
                 async with aiohttp.ClientSession() as session:
