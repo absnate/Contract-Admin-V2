@@ -25,6 +25,7 @@ function App() {
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/bulk-upload" element={<BulkUpload />} />
             <Route path="/bulk-upload/:jobId" element={<BulkUploadDetails />} />
+            <Route path="/active-jobs" element={<ActiveJobs />} />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />
