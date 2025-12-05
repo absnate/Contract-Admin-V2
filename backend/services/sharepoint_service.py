@@ -179,26 +179,17 @@ class SharePointService:
         return current_parent_id
     
     async def _upload_file(self, token: str, site_id: str, drive_id: str, folder_id: str, filename: str, content: bytes) -> str:
-        """Upload file to SharePoint, checking for duplicates and replacing if newer"""
+        """Upload file to SharePoint, skipping if duplicate exists"""
         async with aiohttp.ClientSession() as session:
             # First, check if file already exists
             existing_file = await self._check_file_exists(session, token, site_id, folder_id, filename)
             
             if existing_file:
-                # Compare file sizes
-                new_size = len(content)
-                existing_size = existing_file.get('size', 0)
-                
-                # If exact same size, likely duplicate - skip upload
-                if new_size == existing_size:
-                    logger.info(f"File {filename} already exists with same size - skipping duplicate upload")
-                    return existing_file['id']
-                
-                # Different size - delete old version and upload new one
-                logger.info(f"File {filename} exists but different size (old: {existing_size}, new: {new_size}) - replacing with newer version")
-                await self._delete_file(session, token, site_id, existing_file['id'])
+                # File exists - skip upload regardless of size (faster)
+                logger.info(f"File {filename} already exists in SharePoint - skipping duplicate upload")
+                return existing_file['id']
             
-            # Upload file (either new or replacement)
+            # Upload new file
             if folder_id == "root":
                 url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/root:/{filename}:/content"
             else:
@@ -212,8 +203,7 @@ class SharePointService:
             async with session.put(url, data=content, headers=headers) as response:
                 if response.status in [200, 201]:
                     data = await response.json()
-                    action = "replaced" if existing_file else "uploaded"
-                    logger.info(f"File {action} successfully to folder {folder_id}: {filename}")
+                    logger.info(f"File uploaded successfully to folder {folder_id}: {filename}")
                     return data['id']
                 else:
                     error_text = await response.text()
