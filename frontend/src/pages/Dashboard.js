@@ -49,6 +49,12 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground font-body">Automated technical documentation crawler</p>
           </div>
           <div className="flex gap-3">
+            <Link to="/active-jobs">
+              <Button variant="outline" data-testid="active-jobs-button">
+                <Activity className="w-4 h-4 mr-2" />
+                Active Jobs
+              </Button>
+            </Link>
             <Link to="/schedules">
               <Button variant="outline" data-testid="schedules-button">
                 <Calendar className="w-4 h-4 mr-2" />
