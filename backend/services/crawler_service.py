@@ -43,9 +43,19 @@ class CrawlerService:
                 {"$set": {"total_pdfs_found": len(pdf_links), "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Job {job_id} was cancelled after crawling")
+                return
+            
             # Classify PDFs
             await self._update_job_status(job_id, "classifying")
             await self._classify_pdfs(job_id, pdf_links, product_lines, manufacturer_name)
+            
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Job {job_id} was cancelled after classification")
+                return
             
             # Upload to SharePoint
             await self._update_job_status(job_id, "uploading")
