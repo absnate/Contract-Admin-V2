@@ -25,6 +25,11 @@ class BulkUploadService:
             # Update job status
             await self._update_job_status(job_id, "processing")
             
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Bulk upload job {job_id} was cancelled before processing")
+                return
+            
             # Parse Excel file
             pdf_items = await self._parse_excel_file(file_path)
             
@@ -36,9 +41,19 @@ class BulkUploadService:
                 {"$set": {"total_items": len(pdf_items), "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Bulk upload job {job_id} was cancelled after parsing")
+                return
+            
             # Download and classify PDFs
             await self._update_job_status(job_id, "downloading")
             await self._download_and_classify_pdfs(job_id, pdf_items, manufacturer_name)
+            
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Bulk upload job {job_id} was cancelled after downloading")
+                return
             
             # Upload to SharePoint
             await self._update_job_status(job_id, "uploading")
