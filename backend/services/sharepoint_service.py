@@ -179,9 +179,26 @@ class SharePointService:
         return current_parent_id
     
     async def _upload_file(self, token: str, site_id: str, drive_id: str, folder_id: str, filename: str, content: bytes) -> str:
-        """Upload file to SharePoint"""
+        """Upload file to SharePoint, checking for duplicates and replacing if newer"""
         async with aiohttp.ClientSession() as session:
-            # Use folder_id to upload directly to that folder
+            # First, check if file already exists
+            existing_file = await self._check_file_exists(session, token, site_id, folder_id, filename)
+            
+            if existing_file:
+                # Compare file sizes
+                new_size = len(content)
+                existing_size = existing_file.get('size', 0)
+                
+                # If exact same size, likely duplicate - skip upload
+                if new_size == existing_size:
+                    logger.info(f"File {filename} already exists with same size - skipping duplicate upload")
+                    return existing_file['id']
+                
+                # Different size - delete old version and upload new one
+                logger.info(f"File {filename} exists but different size (old: {existing_size}, new: {new_size}) - replacing with newer version")
+                await self._delete_file(session, token, site_id, existing_file['id'])
+            
+            # Upload file (either new or replacement)
             if folder_id == "root":
                 url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/root:/{filename}:/content"
             else:
@@ -195,8 +212,47 @@ class SharePointService:
             async with session.put(url, data=content, headers=headers) as response:
                 if response.status in [200, 201]:
                     data = await response.json()
-                    logger.info(f"File uploaded successfully to folder {folder_id}: {filename}")
+                    action = "replaced" if existing_file else "uploaded"
+                    logger.info(f"File {action} successfully to folder {folder_id}: {filename}")
                     return data['id']
                 else:
                     error_text = await response.text()
                     raise Exception(f"Failed to upload file: {response.status} - {error_text}")
+    
+    async def _check_file_exists(self, session: aiohttp.ClientSession, token: str, site_id: str, folder_id: str, filename: str) -> dict:
+        """Check if a file already exists in the folder"""
+        try:
+            if folder_id == "root":
+                url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/root:/{filename}"
+            else:
+                url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{folder_id}:/{filename}"
+            
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data
+                else:
+                    # File doesn't exist
+                    return None
+        
+        except Exception as e:
+            logger.debug(f"File {filename} does not exist: {str(e)}")
+            return None
+    
+    async def _delete_file(self, session: aiohttp.ClientSession, token: str, site_id: str, file_id: str):
+        """Delete a file from SharePoint"""
+        try:
+            url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{file_id}"
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            async with session.delete(url, headers=headers) as response:
+                if response.status == 204:
+                    logger.info(f"Old file version deleted successfully")
+                else:
+                    error_text = await response.text()
+                    logger.warning(f"Failed to delete old file: {response.status} - {error_text}")
+        
+        except Exception as e:
+            logger.warning(f"Error deleting old file: {str(e)}")
