@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle2, AlertCircle, Plus, Calendar } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, Plus, Calendar, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import axios from 'axios';
