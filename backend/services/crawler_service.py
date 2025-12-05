@@ -27,6 +27,11 @@ class CrawlerService:
             # Update job status
             await self._update_job_status(job_id, "crawling")
             
+            # Check if job was cancelled
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Job {job_id} was cancelled before crawling started")
+                return
+            
             # Crawl the domain
             pdf_links = await self._crawl_domain(domain, product_lines, max_pages=100)
             
