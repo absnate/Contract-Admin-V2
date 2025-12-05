@@ -386,7 +386,7 @@ async def get_bulk_upload_pdfs(job_id: str):
 async def get_stats():
     """Get dashboard statistics"""
     total_jobs = await db.crawl_jobs.count_documents({})
-    active_jobs = await db.crawl_jobs.count_documents({"status": {"$in": ["pending", "crawling", "classifying", "uploading"]}})
+    active_crawl_jobs = await db.crawl_jobs.count_documents({"status": {"$in": ["pending", "crawling", "classifying", "uploading"]}})
     total_pdfs = await db.pdf_records.count_documents({})
     technical_pdfs = await db.pdf_records.count_documents({"is_technical": True})
     uploaded_pdfs = await db.pdf_records.count_documents({"sharepoint_uploaded": True})
@@ -394,13 +394,17 @@ async def get_stats():
     
     # Bulk upload stats
     bulk_jobs = await db.bulk_upload_jobs.count_documents({})
+    active_bulk_jobs = await db.bulk_upload_jobs.count_documents({"status": {"$in": ["pending", "processing", "downloading", "uploading"]}})
     bulk_pdfs = await db.bulk_upload_pdfs.count_documents({})
     bulk_technical = await db.bulk_upload_pdfs.count_documents({"is_technical": True})
     bulk_uploaded = await db.bulk_upload_pdfs.count_documents({"sharepoint_uploaded": True})
     
+    # Combined active jobs count
+    total_active_jobs = active_crawl_jobs + active_bulk_jobs
+    
     return {
         "total_jobs": total_jobs,
-        "active_jobs": active_jobs,
+        "active_jobs": total_active_jobs,
         "total_pdfs": total_pdfs,
         "technical_pdfs": technical_pdfs,
         "uploaded_pdfs": uploaded_pdfs,
