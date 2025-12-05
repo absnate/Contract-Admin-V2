@@ -224,6 +224,87 @@ async def delete_schedule(schedule_id: str):
     
     return {"message": "Schedule deleted successfully"}
 
+@api_router.post("/crawl-jobs/{job_id}/cancel")
+async def cancel_crawl_job(job_id: str):
+    """Cancel a running crawl job"""
+    job = await db.crawl_jobs.find_one({"id": job_id}, {"_id": 0})
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Only allow cancelling jobs that are in progress
+    if job['status'] not in ['pending', 'crawling', 'classifying', 'uploading']:
+        raise HTTPException(status_code=400, detail=f"Cannot cancel job with status: {job['status']}")
+    
+    # Update job status to cancelled
+    await db.crawl_jobs.update_one(
+        {"id": job_id},
+        {"$set": {
+            "status": "cancelled",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "error_message": "Job cancelled by user"
+        }}
+    )
+    
+    return {"message": "Job cancelled successfully"}
+
+@api_router.post("/bulk-upload-jobs/{job_id}/cancel")
+async def cancel_bulk_upload_job(job_id: str):
+    """Cancel a running bulk upload job"""
+    job = await db.bulk_upload_jobs.find_one({"id": job_id}, {"_id": 0})
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Only allow cancelling jobs that are in progress
+    if job['status'] not in ['pending', 'processing', 'downloading', 'uploading']:
+        raise HTTPException(status_code=400, detail=f"Cannot cancel job with status: {job['status']}")
+    
+    # Update job status to cancelled
+    await db.bulk_upload_jobs.update_one(
+        {"id": job_id},
+        {"$set": {
+            "status": "cancelled",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "error_message": "Job cancelled by user"
+        }}
+    )
+    
+    return {"message": "Job cancelled successfully"}
+
+@api_router.get("/active-jobs")
+async def get_active_jobs():
+    """Get all active (in-progress) jobs"""
+    # Get active crawl jobs
+    crawl_jobs = await db.crawl_jobs.find({
+        "status": {"$in": ["pending", "crawling", "classifying", "uploading"]}
+    }, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    for job in crawl_jobs:
+        if isinstance(job.get('created_at'), str):
+            job['created_at'] = datetime.fromisoformat(job['created_at'])
+        if isinstance(job.get('updated_at'), str):
+            job['updated_at'] = datetime.fromisoformat(job['updated_at'])
+        job['job_type'] = 'crawl'
+    
+    # Get active bulk upload jobs
+    bulk_jobs = await db.bulk_upload_jobs.find({
+        "status": {"$in": ["pending", "processing", "downloading", "uploading"]}
+    }, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    for job in bulk_jobs:
+        if isinstance(job.get('created_at'), str):
+            job['created_at'] = datetime.fromisoformat(job['created_at'])
+        if isinstance(job.get('updated_at'), str):
+            job['updated_at'] = datetime.fromisoformat(job['updated_at'])
+        job['job_type'] = 'bulk_upload'
+    
+    # Combine and sort by created_at
+    all_jobs = crawl_jobs + bulk_jobs
+    all_jobs.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    return all_jobs
+
 @api_router.post("/bulk-upload", response_model=BulkUploadJob)
 async def create_bulk_upload(
     manufacturer_name: str = Query(...),
