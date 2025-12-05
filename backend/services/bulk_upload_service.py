@@ -122,6 +122,11 @@ class BulkUploadService:
         failed_count = 0
         
         for item in pdf_items:
+            # Check if job was cancelled before each download
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Bulk upload job {job_id} was cancelled during download phase")
+                return
+            
             try:
                 part_number = item['part_number']
                 pdf_url = item['url']
