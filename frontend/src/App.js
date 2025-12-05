@@ -8,6 +8,7 @@ import JobDetails from './pages/JobDetails';
 import Schedules from './pages/Schedules';
 import BulkUpload from './pages/BulkUpload';
 import BulkUploadDetails from './pages/BulkUploadDetails';
+import ActiveJobs from './pages/ActiveJobs';
 import '@/App.css';
 
 const queryClient = new QueryClient();
