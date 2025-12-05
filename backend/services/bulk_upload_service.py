@@ -229,6 +229,11 @@ class BulkUploadService:
         uploaded_count = 0
         
         for pdf in technical_pdfs:
+            # Check if job was cancelled before each upload
+            if await self._is_job_cancelled(job_id):
+                logger.info(f"Bulk upload job {job_id} was cancelled during SharePoint upload phase")
+                return
+            
             try:
                 # Download PDF
                 async with aiohttp.ClientSession() as session:
