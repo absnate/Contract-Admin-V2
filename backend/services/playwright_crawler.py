@@ -168,6 +168,9 @@ class PlaywrightCrawler:
 
             # Crawl collected URLs (limit breadth)
             for next_url in urls_to_crawl:
+                if await self._should_cancel():
+                    return
+
                 if len(self.visited_urls) < max_pages:
                     await asyncio.sleep(1)  # Be polite
                     await self._crawl_page_with_browser(next_url, base_domain, product_lines, max_pages)
