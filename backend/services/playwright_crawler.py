@@ -32,6 +32,10 @@ class PlaywrightCrawler:
         """Crawl a JavaScript-heavy domain using Playwright"""
         self.visited_urls.clear()
         self.pdf_urls.clear()
+
+        if await self._should_cancel():
+            logger.info("Playwright crawl cancelled before start")
+            return set()
         
         # Ensure domain has protocol
         if not domain.startswith(('http://', 'https://')):
