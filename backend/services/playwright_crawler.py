@@ -148,9 +148,10 @@ class PlaywrightCrawler:
                     # Remove fragments
                     full_url = full_url.split('#')[0]
 
-                    # Check if it's a document link
+                    # Check if it's a document link (handle query strings like .pdf?ver=...)
+                    path_lower = urlparse(full_url).path.lower()
                     if (
-                        full_url.lower().endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'))
+                        path_lower.endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'))
                         or '/view/' in full_url
                         or '/mediamanager/' in full_url
                     ):
