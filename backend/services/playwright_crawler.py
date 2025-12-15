@@ -207,7 +207,12 @@ class PlaywrightCrawler:
                 )
         
         except Exception as e:
-            logger.warning(f"Error crawling {url} with Playwright: {str(e)}")
+            msg = str(e)
+            if "Download is starting" in msg:
+                # Treat as a discovered document URL
+                self.pdf_urls.add(url)
+                return
+            logger.warning(f"Error crawling {url} with Playwright: {msg}")
     
     def _matches_product_lines(self, url: str, link_text: str, product_lines: List[str]) -> bool:
         """Check if URL or link text matches any product lines"""
