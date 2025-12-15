@@ -152,6 +152,12 @@ async def create_crawl_job(job_data: CrawlJobCreate, background_tasks: Backgroun
     )
     proc.start()
     CRAWL_JOB_PROCS[job.id] = proc.pid
+
+    # Persist worker PID so cancellation still works after backend reloads
+    try:
+        await db.crawl_jobs.update_one({"id": job.id}, {"$set": {"worker_pid": proc.pid}})
+    except Exception:
+        pass
     
     # Schedule weekly recrawl if enabled
     if job.weekly_recrawl:
