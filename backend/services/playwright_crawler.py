@@ -33,7 +33,7 @@ class PlaywrightCrawler:
         
         try:
             self.playwright = await async_playwright().start()
-            self.browser = await self.playwright.chromium.launch(headless=True)
+            self.browser = await self.playwright.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
             
             await self._crawl_page_with_browser(domain, base_domain, product_lines, max_pages)
             
