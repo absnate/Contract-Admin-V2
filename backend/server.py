@@ -17,6 +17,7 @@ from services.pdf_classifier import PDFClassifier
 from services.sharepoint_service import SharePointService
 from services.scheduler_service import SchedulerService
 from services.bulk_upload_service import BulkUploadService
+from services.process_runner import run_crawl_job_process
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
