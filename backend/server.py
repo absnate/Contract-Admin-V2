@@ -253,6 +253,18 @@ async def cancel_crawl_job(job_id: str):
             "error_message": "Job cancelled by user"
         }}
     )
+    # Best-effort: stop OS process (kills Chromium tree too)
+    pid = CRAWL_JOB_PROCS.pop(job_id, None)
+    if pid:
+        try:
+            os.killpg(pid, signal.SIGTERM)
+        except Exception:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except Exception:
+                pass
+
+
     
     return {"message": "Job cancelled successfully"}
 
