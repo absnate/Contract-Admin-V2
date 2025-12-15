@@ -417,46 +417,54 @@ class CrawlerService:
         }).to_list(1000)
         
         uploaded_count = 0
-        
-        for pdf in technical_pdfs:
-            # Check if job was cancelled before each upload
-            if await self._is_job_cancelled(job_id):
-                logger.info(f"Crawl job {job_id} was cancelled during SharePoint upload phase")
-                return
-            
-            try:
-                # Download PDF
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
-                }
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(pdf['source_url'], headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as response:
-                        if response.status == 200:
-                            pdf_content = await response.read()
-                            
-                            # Upload to SharePoint
-                            sharepoint_id = await self.sharepoint_service.upload_pdf(
-                                filename=pdf['filename'],
-                                content=pdf_content,
-                                folder_path=sharepoint_folder
-                            )
-                            
-                            # Update PDF record
-                            await self.db.pdf_records.update_one(
-                                {"id": pdf['id']},
-                                {"$set": {
-                                    "sharepoint_uploaded": True,
-                                    "sharepoint_id": sharepoint_id
-                                }}
-                            )
-                            
-                            uploaded_count += 1
-                            logger.info(f"Uploaded PDF to SharePoint: {pdf['filename']}")
-            
-            except Exception as e:
-                logger.error(f"Error uploading PDF {pdf['filename']} to SharePoint: {str(e)}")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+        }
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            for pdf in technical_pdfs:
+                # Check if job was cancelled before each upload
+                if await self._is_job_cancelled(job_id):
+                    logger.info(f"Crawl job {job_id} was cancelled during SharePoint upload phase")
+                    return
+
+                # Upload flow only supports PDFs
+                if urlparse(pdf['source_url']).path.lower().endswith('.pdf') is False:
+                    continue
+
+                try:
+                    # Download PDF
+                    async with session.get(pdf['source_url'], timeout=aiohttp.ClientTimeout(total=60)) as response:
+                        if response.status != 200:
+                            logger.warning(f"Skipping upload (HTTP {response.status}): {pdf['source_url']}")
+                            continue
+
+                        pdf_content = await response.read()
+
+                        # Upload to SharePoint
+                        sharepoint_id = await self.sharepoint_service.upload_pdf(
+                            filename=pdf['filename'],
+                            content=pdf_content,
+                            folder_path=sharepoint_folder
+                        )
+
+                        # Update PDF record
+                        await self.db.pdf_records.update_one(
+                            {"id": pdf['id']},
+                            {"$set": {
+                                "sharepoint_uploaded": True,
+                                "sharepoint_id": sharepoint_id
+                            }}
+                        )
+
+                        uploaded_count += 1
+                        if uploaded_count % 10 == 0:
+                            logger.info(f"Uploaded {uploaded_count} PDFs to SharePoint so far")
+
+                except Exception as e:
+                    logger.error(f"Error uploading PDF {pdf['filename']} to SharePoint: {str(e)}")
         
         # Update job with uploaded count
         await self.db.crawl_jobs.update_one(
