@@ -20,7 +20,7 @@ const ActiveJobs = () => {
       const res = await axios.get(`${API_URL}/api/active-jobs`);
       return res.data;
     },
-    refetchInterval: 3000, // Refresh every 3 seconds
+    refetchInterval: 1000, // Refresh every 1 second (faster feedback on cancellation)
   });
 
   const cancelCrawlMutation = useMutation({
