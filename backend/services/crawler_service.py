@@ -328,60 +328,75 @@ class CrawlerService:
 
         logger.info(f"Starting classification of {len(pdf_links_list)} PDFs")
         
-        for pdf_url in pdf_links_list:
-            # Check if job was cancelled before each classification
-            if await self._is_job_cancelled(job_id):
-                logger.info(f"Crawl job {job_id} was cancelled during classification phase")
-                return
-            
-            try:
-                # Download PDF metadata (first few KB)
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
-                }
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+        }
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(pdf_url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
-                        if response.status == 200:
-                            # Get filename and file size
-                            filename = pdf_url.split('/')[-1]
-                            file_size = int(response.headers.get('content-length', 0))
-                            
-                            # Read first 100KB for classification
-                            content_sample = await response.content.read(102400)
-                            
-                            # Classify using AI
-                            classification = await self.pdf_classifier.classify_pdf(
-                                filename=filename,
-                                url=pdf_url,
-                                content_sample=content_sample,
-                                manufacturer=manufacturer_name,
-                                product_lines=product_lines
-                            )
-                            
-                            # Save PDF record
-                            pdf_record = {
-                                "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
-                                "job_id": job_id,
-                                "filename": filename,
-                                "source_url": pdf_url,
-                                "file_size": file_size,
-                                "is_technical": classification['is_technical'],
-                                "classification_reason": classification['reason'],
-                                "document_type": classification.get('document_type'),
-                                "sharepoint_uploaded": False,
-                                "sharepoint_id": None,
-                                "created_at": datetime.now(timezone.utc).isoformat()
-                            }
-                            
-                            await self.db.pdf_records.insert_one(pdf_record)
-                            classified_count += 1
-                            
-                            logger.info(f"Classified PDF: {filename} - Technical: {classification['is_technical']}")
-            
-            except Exception as e:
-                logger.error(f"Error classifying PDF {pdf_url}: {str(e)}")
+        failed_fetches = 0
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            for pdf_url in pdf_links_list:
+                # Check if job was cancelled before each classification
+                if await self._is_job_cancelled(job_id):
+                    logger.info(f"Crawl job {job_id} was cancelled during classification phase")
+                    return
+
+                # Classifier only supports PDFs (skip doc/docx, etc.)
+                if urlparse(pdf_url).path.lower().endswith('.pdf') is False:
+                    continue
+
+                try:
+                    # Download PDF metadata (first few KB)
+                    async with session.get(pdf_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                        if response.status != 200:
+                            failed_fetches += 1
+                            if failed_fetches <= 5:
+                                logger.warning(f"Skipping PDF (HTTP {response.status}): {pdf_url}")
+                            continue
+
+                        # Get filename and file size
+                        filename = urlparse(pdf_url).path.split('/')[-1] or pdf_url.split('/')[-1]
+                        file_size = int(response.headers.get('content-length', 0))
+
+                        # Read first 100KB for classification
+                        content_sample = await response.content.read(102400)
+
+                        # Classify using AI
+                        classification = await self.pdf_classifier.classify_pdf(
+                            filename=filename,
+                            url=pdf_url,
+                            content_sample=content_sample,
+                            manufacturer=manufacturer_name,
+                            product_lines=product_lines
+                        )
+
+                        # Save PDF record
+                        pdf_record = {
+                            "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
+                            "job_id": job_id,
+                            "filename": filename,
+                            "source_url": pdf_url,
+                            "file_size": file_size,
+                            "is_technical": classification['is_technical'],
+                            "classification_reason": classification['reason'],
+                            "document_type": classification.get('document_type'),
+                            "sharepoint_uploaded": False,
+                            "sharepoint_id": None,
+                            "created_at": datetime.now(timezone.utc).isoformat()
+                        }
+
+                        await self.db.pdf_records.insert_one(pdf_record)
+                        classified_count += 1
+
+                        if classified_count % 25 == 0:
+                            logger.info(f"Classified {classified_count} PDFs so far")
+
+                except Exception as e:
+                    logger.error(f"Error classifying PDF {pdf_url}: {str(e)}")
+
+        if failed_fetches:
+            logger.info(f"PDF fetch failures during classification: {failed_fetches}")
         
         # Update job with classified count
         await self.db.crawl_jobs.update_one(
