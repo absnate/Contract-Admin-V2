@@ -79,8 +79,8 @@ class PlaywrightCrawler:
             page = await self.browser.new_page()
             
             # If the URL itself is a document, don't navigate (it can trigger Playwright download mode)
-            url_lower = (url or "").lower()
-            if url_lower.endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx')):
+            url_path_lower = urlparse(url).path.lower()
+            if url_path_lower.endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx')):
                 self.pdf_urls.add(url)
                 await page.close()
                 return
