@@ -149,7 +149,7 @@
     message: "Starting UI testing for Active Jobs stop/cancel flow: 1) Create new crawl job via /new-job 2) Navigate to /active-jobs and verify job appears 3) Test Stop Job functionality 4) Verify no confirm dialog blocks click 5) Verify button disabled during request 6) Test bulk upload job if possible. Testing comprehensive UI flow end-to-end."
 ## test_plan:
 ##   current_focus:
-##     - "Crawl americanspecialties.com landing page and discover product PDFs"
+##     - "Active Jobs stop/cancel flow UI testing"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
