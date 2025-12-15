@@ -143,15 +143,14 @@ async def create_crawl_job(job_data: CrawlJobCreate, background_tasks: Backgroun
     doc['updated_at'] = doc['updated_at'].isoformat()
     await db.crawl_jobs.insert_one(doc)
     
-    # Start crawling in background
-    background_tasks.add_task(
-        crawler_service.start_crawl,
-        job.id,
-        job.domain,
-        job.product_lines,
-        job.manufacturer_name,
-        job.sharepoint_folder
+    # Start crawling in a separate OS process (prevents blocking FastAPI event loop)
+    proc = multiprocessing.Process(
+        target=run_crawl_job_process,
+        args=(job.id, job.domain, job.product_lines, job.manufacturer_name, job.sharepoint_folder),
+        daemon=True,
     )
+    proc.start()
+    CRAWL_JOB_PROCS[job.id] = proc.pid
     
     # Schedule weekly recrawl if enabled
     if job.weekly_recrawl:
