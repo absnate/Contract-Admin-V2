@@ -95,7 +95,14 @@ class PlaywrightCrawler:
             # Navigate to page with longer timeout and domcontentloaded instead of networkidle
             try:
                 await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            except Exception:
+            except Exception as e:
+                # Some sites trigger a file download which Playwright surfaces as a navigation error.
+                msg = str(e)
+                if "Download is starting" in msg:
+                    self.pdf_urls.add(url)
+                    await page.close()
+                    return
+
                 # If timeout, try with load instead
                 logger.debug(f"Timeout with domcontentloaded, trying load: {url}")
                 await page.goto(url, wait_until="load", timeout=60000)
