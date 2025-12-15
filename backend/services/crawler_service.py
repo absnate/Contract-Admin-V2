@@ -1,6 +1,8 @@
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+
 from urllib.parse import urljoin, urlparse
 import logging
 from typing import List, Set
