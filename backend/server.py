@@ -33,6 +33,10 @@ db = client[os.environ['DB_NAME']]
 
 # Initialize services
 crawler_service = CrawlerService(db)
+# Track crawl job OS processes (best-effort, in-memory)
+CRAWL_JOB_PROCS = {}
+
+
 pdf_classifier = PDFClassifier()
 sharepoint_service = SharePointService()
 scheduler_service = SchedulerService(db, crawler_service, pdf_classifier, sharepoint_service)
