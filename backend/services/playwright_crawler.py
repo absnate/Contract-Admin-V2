@@ -85,6 +85,13 @@ class PlaywrightCrawler:
                 await page.close()
                 return
 
+            # Proactively avoid navigating to obvious document download URLs
+            # (some sites trigger downloads that Playwright treats as navigation errors)
+            if any(ext in url_path_lower for ext in ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']):
+                self.pdf_urls.add(url)
+                await page.close()
+                return
+
             # Navigate to page with longer timeout and domcontentloaded instead of networkidle
             try:
                 await page.goto(url, wait_until="domcontentloaded", timeout=60000)
