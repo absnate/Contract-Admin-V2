@@ -350,9 +350,31 @@ class CrawlerService:
                     # Download PDF metadata (first few KB)
                     async with session.get(pdf_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                         if response.status != 200:
-                            failed_fetches += 1
-                            if failed_fetches <= 5:
-                                logger.warning(f"Skipping PDF (HTTP {response.status}): {pdf_url}")
+                            # Some sites allow browser download but block raw HTTP requests.
+                            # In that case we still create a record and classify based on filename/URL.
+                            filename = urlparse(pdf_url).path.split('/')[-1] or pdf_url.split('/')[-1]
+                            classification = await self.pdf_classifier.classify_pdf(
+                                filename=filename,
+                                url=pdf_url,
+                                content_sample=b"",
+                                manufacturer=manufacturer_name,
+                                product_lines=product_lines,
+                            )
+                            pdf_record = {
+                                "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
+                                "job_id": job_id,
+                                "filename": filename,
+                                "source_url": pdf_url,
+                                "file_size": 0,
+                                "is_technical": classification['is_technical'],
+                                "classification_reason": f"HTTP {response.status} on fetch; classified from filename/URL. {classification['reason']}",
+                                "document_type": classification.get('document_type'),
+                                "sharepoint_uploaded": False,
+                                "sharepoint_id": None,
+                                "created_at": datetime.now(timezone.utc).isoformat()
+                            }
+                            await self.db.pdf_records.insert_one(pdf_record)
+                            classified_count += 1
                             continue
 
                         # Get filename and file size
