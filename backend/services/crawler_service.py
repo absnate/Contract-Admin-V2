@@ -321,6 +321,10 @@ class CrawlerService:
         
         # Convert set to list to avoid "set changed size during iteration" error
         pdf_links_list = list(pdf_links)
+        # Cap how many PDFs we classify per job to avoid huge domains producing thousands of PDFs.
+        # This keeps jobs practical while still being useful.
+        pdf_links_list = pdf_links_list[:400]
+
         logger.info(f"Starting classification of {len(pdf_links_list)} PDFs")
         
         for pdf_url in pdf_links_list:
@@ -331,8 +335,13 @@ class CrawlerService:
             
             try:
                 # Download PDF metadata (first few KB)
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+                }
+
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(pdf_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    async with session.get(pdf_url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
                         if response.status == 200:
                             # Get filename and file size
                             filename = pdf_url.split('/')[-1]
