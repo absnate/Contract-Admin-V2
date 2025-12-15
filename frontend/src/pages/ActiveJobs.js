@@ -27,9 +27,9 @@ const ActiveJobs = () => {
     mutationFn: async (jobId) => {
       await axios.post(`${API_URL}/api/crawl-jobs/${jobId}/cancel`);
     },
-    onSuccess: () => {
+    onSuccess: (_data, jobId) => {
       // Optimistic UI: remove immediately, then refetch
-      queryClient.setQueryData(['active-jobs'], (old) => (old ? old.filter((j) => j.job_type !== 'crawl' || j.id !== cancelCrawlMutation.variables) : old));
+      queryClient.setQueryData(['active-jobs'], (old) => (old ? old.filter((j) => j.id !== jobId) : old));
       queryClient.invalidateQueries(['active-jobs']);
       toast.success('Crawl job cancelled successfully');
     },
@@ -42,7 +42,8 @@ const ActiveJobs = () => {
     mutationFn: async (jobId) => {
       await axios.post(`${API_URL}/api/bulk-upload-jobs/${jobId}/cancel`);
     },
-    onSuccess: () => {
+    onSuccess: (_data, jobId) => {
+      queryClient.setQueryData(['active-jobs'], (old) => (old ? old.filter((j) => j.id !== jobId) : old));
       queryClient.invalidateQueries(['active-jobs']);
       toast.success('Bulk upload job cancelled successfully');
     },
