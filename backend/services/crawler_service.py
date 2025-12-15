@@ -172,19 +172,50 @@ class CrawlerService:
                 html = await response.text()
                 soup = BeautifulSoup(html, 'html.parser')
                 
-                # Find all links
-                links_to_crawl = []
+                # Find all links (prioritize product/category/detail pages to go deeper from landing pages)
+                def _url_priority(candidate_url: str, candidate_text: str) -> int:
+                    u = (candidate_url or "").lower()
+                    t = (candidate_text or "").lower()
+
+                    score = 0
+
+                    # Strong signals for product/category pages
+                    if "/product/" in u:
+                        score += 1000
+                    if "/product_category/" in u:
+                        score += 800
+
+                    # Technical-doc landing pages / libraries
+                    if "technical-data" in u or "/tds" in u or "data-sheet" in u or "datasheet" in u:
+                        score += 600
+                    if "submittal" in u:
+                        score += 550
+                    if "spec" in u:
+                        score += 500
+
+                    # De-prioritize translated duplicates
+                    if re.search(r"https?://[^/]+/(fr|es|de|hi|ar)/", u):
+                        score -= 600
+
+                    # Light boost from link text
+                    if any(k in t for k in ["technical data", "data sheet", "datasheet", "product data", "submittal", "spec"]):
+                        score += 200
+
+                    return score
+
+                url_scores = {}
+
                 for link in soup.find_all('a', href=True):
                     href = link.get('href')
                     full_url = urljoin(url, href)
-                    
+
                     # Skip anchors, javascript, mailto, tel
                     if full_url.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
                         continue
-                    
+
                     # Remove URL fragments
                     full_url = full_url.split('#')[0]
-                    
+
                     # Check if it's a PDF
                     if full_url.lower().endswith('.pdf'):
                         # Check if it matches product lines (if specified)
@@ -192,15 +223,28 @@ class CrawlerService:
                             self.pdf_urls.add(full_url)
                             logger.info(f"Found PDF: {full_url}")
                         continue
-                    
+
                     # Only follow links within the same domain
                     if urlparse(full_url).netloc == base_domain and full_url not in self.visited_urls:
                         # Check if URL might lead to product documentation
                         if self._is_relevant_url(full_url, product_lines):
-                            links_to_crawl.append(full_url)
-                
+                            link_text = link.get_text(" ", strip=True)
+                            score = _url_priority(full_url, link_text)
+                            # Keep best score per URL (dedupe)
+                            url_scores[full_url] = max(url_scores.get(full_url, -10**9), score)
+
+                sorted_urls = sorted(url_scores.items(), key=lambda kv: kv[1], reverse=True)
+                top_k = 15
+                links_to_crawl = [u for u, _ in sorted_urls[:top_k]]
+
+                # Log only for the entry page (helps debug landing-page behavior without noisy logs)
+                if len(self.visited_urls) == 1:
+                    logger.info(
+                        f"Landing-page link selection: discovered {len(url_scores)} internal links; crawling top {len(links_to_crawl)}"
+                    )
+
                 # Crawl collected links
-                for next_url in links_to_crawl[:5]:  # Limit breadth to avoid too many branches
+                for next_url in links_to_crawl:
                     if len(self.visited_urls) < max_pages:
                         await asyncio.sleep(0.5)  # Be polite
                         await self._crawl_page(session, next_url, base_domain, product_lines, max_pages)
