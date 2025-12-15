@@ -12,11 +12,21 @@ logger = logging.getLogger(__name__)
 os.environ['PLAYWRIGHT_BROWSERS_PATH'] = '/pw-browsers'
 
 class PlaywrightCrawler:
-    def __init__(self):
+    def __init__(self, cancel_check=None):
         self.visited_urls: Set[str] = set()
         self.pdf_urls: Set[str] = set()
         self.browser: Browser = None
         self.playwright = None
+        self._cancel_check = cancel_check
+    async def _should_cancel(self) -> bool:
+        if not self._cancel_check:
+            return False
+        try:
+            return bool(await self._cancel_check())
+        except Exception:
+            return False
+
+
     
     async def crawl_domain(self, domain: str, product_lines: List[str], max_pages: int = 100) -> Set[str]:
         """Crawl a JavaScript-heavy domain using Playwright"""
