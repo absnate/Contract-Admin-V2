@@ -74,47 +74,85 @@ class PlaywrightCrawler:
             
             # Find all links on the page
             links = await page.query_selector_all('a[href]')
-            
-            urls_to_crawl = []
-            
+
+            def _url_priority(candidate_url: str, candidate_text: str) -> int:
+                u = (candidate_url or "").lower()
+                t = (candidate_text or "").lower()
+
+                score = 0
+
+                # Product/category pages (WordPress/WooCommerce common patterns)
+                if "/product/" in u:
+                    score += 1000
+                if "/product_category/" in u:
+                    score += 800
+
+                # Documentation/library pages
+                if "technical-data" in u or "/tds" in u or "data-sheet" in u or "datasheet" in u:
+                    score += 600
+                if "product-data" in u:
+                    score += 580
+                if "submittal" in u:
+                    score += 550
+                if "spec" in u:
+                    score += 500
+
+                # De-prioritize translated duplicates
+                if re.search(r"https?://[^/]+/(fr|es|de|hi|ar)/", u):
+                    score -= 600
+
+                # Link text hints
+                if any(k in t for k in ["technical data", "data sheet", "datasheet", "product data", "submittal", "spec"]):
+                    score += 200
+
+                return score
+
+            url_scores = {}
+
             for link in links:
                 try:
                     href = await link.get_attribute('href')
                     if not href:
                         continue
-                    
+
                     # Skip anchors, javascript, mailto, tel
                     if href.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
                         continue
-                    
+
                     full_url = urljoin(url, href)
-                    
+
                     # Remove fragments
                     full_url = full_url.split('#')[0]
-                    
+
                     # Check if it's a PDF
                     if full_url.lower().endswith('.pdf') or '/view/' in full_url or '/mediamanager/' in full_url:
                         # Get link text for context
                         link_text = await link.inner_text() if link else ''
-                        
+
                         if self._matches_product_lines(full_url, link_text, product_lines):
                             self.pdf_urls.add(full_url)
                             logger.info(f"Found PDF: {full_url}")
                         continue
-                    
+
                     # Only follow links within same domain
                     if urlparse(full_url).netloc == base_domain and full_url not in self.visited_urls:
                         # Check if URL is relevant
                         if self._is_relevant_url(full_url, product_lines):
-                            urls_to_crawl.append(full_url)
-                
+                            link_text = await link.inner_text() if link else ''
+                            score = _url_priority(full_url, link_text)
+                            url_scores[full_url] = max(url_scores.get(full_url, -10**9), score)
+
                 except Exception as e:
                     logger.debug(f"Error processing link: {str(e)}")
-            
+
             await page.close()
-            
+
+            sorted_urls = sorted(url_scores.items(), key=lambda kv: kv[1], reverse=True)
+            top_k = 15
+            urls_to_crawl = [u for u, _ in sorted_urls[:top_k]]
+
             # Crawl collected URLs (limit breadth)
-            for next_url in urls_to_crawl[:5]:
+            for next_url in urls_to_crawl:
                 if len(self.visited_urls) < max_pages:
                     await asyncio.sleep(1)  # Be polite
                     await self._crawl_page_with_browser(next_url, base_domain, product_lines, max_pages)

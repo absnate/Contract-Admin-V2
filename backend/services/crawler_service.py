@@ -117,20 +117,32 @@ class CrawlerService:
             }
             
             async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                # Many manufacturer sites sit behind Cloudflare / bot checks.
+                # If we get challenged (403/429/503), prefer Playwright (real browser) crawl.
+                if response.status in [403, 429, 503]:
+                    logger.info(f"Got HTTP {response.status} fetching {url} - likely bot protection, using Playwright")
+                    return True
+
                 if response.status != 200:
                     return False
-                
+
                 html = await response.text()
+
+                # Heuristic: Cloudflare interstitial page
+                if "Just a moment" in html or "cf-browser-verification" in html or "cf-chl" in html:
+                    logger.info("Detected Cloudflare challenge page - using Playwright")
+                    return True
+
                 soup = BeautifulSoup(html, 'html.parser')
-                
+
                 # Count links
                 links = soup.find_all('a', href=True)
-                
+
                 # If very few links found, likely JavaScript site
                 if len(links) < 5:
                     logger.info(f"Only {len(links)} links found in HTML - likely JavaScript site")
                     return True
-                
+
                 return False
         
         except Exception as e:
