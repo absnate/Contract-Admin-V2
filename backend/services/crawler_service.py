@@ -232,12 +232,12 @@ class CrawlerService:
                     # Remove URL fragments
                     full_url = full_url.split('#')[0]
 
-                    # Check if it's a PDF
-                    if full_url.lower().endswith('.pdf'):
+                    # Check if it's a document link
+                    if full_url.lower().endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx')):
                         # Check if it matches product lines (if specified)
                         if self._matches_product_lines(full_url, link.get_text(), product_lines):
                             self.pdf_urls.add(full_url)
-                            logger.info(f"Found PDF: {full_url}")
+                            logger.info(f"Found document: {full_url}")
                         continue
 
                     # Only follow links within the same domain
