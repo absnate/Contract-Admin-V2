@@ -97,7 +97,9 @@ class CrawlerService:
         
         if is_js_heavy:
             logger.info(f"{base_domain} appears to be JavaScript-heavy, using Playwright crawler")
-            playwright_crawler = PlaywrightCrawler()
+            playwright_crawler = PlaywrightCrawler(
+                cancel_check=lambda: self._is_job_cancelled(job_id)
+            )
             pdf_urls = await playwright_crawler.crawl_domain(domain, product_lines, max_pages=max_pages)
             self.pdf_urls = pdf_urls
             self.visited_urls = playwright_crawler.visited_urls
