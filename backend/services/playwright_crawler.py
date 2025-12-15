@@ -63,6 +63,9 @@ class PlaywrightCrawler:
     
     async def _crawl_page_with_browser(self, url: str, base_domain: str, product_lines: List[str], max_pages: int):
         """Crawl a page using Playwright browser"""
+        if await self._should_cancel():
+            return
+
         if len(self.visited_urls) >= max_pages or url in self.visited_urls:
             return
         
