@@ -28,6 +28,8 @@ const ActiveJobs = () => {
       await axios.post(`${API_URL}/api/crawl-jobs/${jobId}/cancel`);
     },
     onSuccess: () => {
+      // Optimistic UI: remove immediately, then refetch
+      queryClient.setQueryData(['active-jobs'], (old) => (old ? old.filter((j) => j.job_type !== 'crawl' || j.id !== cancelCrawlMutation.variables) : old));
       queryClient.invalidateQueries(['active-jobs']);
       toast.success('Crawl job cancelled successfully');
     },
