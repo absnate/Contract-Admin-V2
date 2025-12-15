@@ -78,10 +78,17 @@ class PlaywrightCrawler:
         try:
             page = await self.browser.new_page()
             
+            # If the URL itself is a document, don't navigate (it can trigger Playwright download mode)
+            url_lower = (url or "").lower()
+            if url_lower.endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx')):
+                self.pdf_urls.add(url)
+                await page.close()
+                return
+
             # Navigate to page with longer timeout and domcontentloaded instead of networkidle
             try:
                 await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            except Exception as e:
+            except Exception:
                 # If timeout, try with load instead
                 logger.debug(f"Timeout with domcontentloaded, trying load: {url}")
                 await page.goto(url, wait_until="load", timeout=60000)
