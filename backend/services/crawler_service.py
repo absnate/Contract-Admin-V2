@@ -383,7 +383,8 @@ class CrawlerService:
         technical_pdfs = await self.db.pdf_records.find({
             "job_id": job_id,
             "is_technical": True,
-            "sharepoint_uploaded": False
+            "sharepoint_uploaded": False,
+            "document_type": {"$in": ["Product Data Sheet", "Specification Sheet", "Submittal Sheet", "Technical Data Sheet"]}
         }).to_list(1000)
         
         uploaded_count = 0
