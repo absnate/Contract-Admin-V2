@@ -410,8 +410,13 @@ class CrawlerService:
             
             try:
                 # Download PDF
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+                }
+
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(pdf['source_url'], timeout=aiohttp.ClientTimeout(total=60)) as response:
+                    async with session.get(pdf['source_url'], headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as response:
                         if response.status == 200:
                             pdf_content = await response.read()
                             
