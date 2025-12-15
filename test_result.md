@@ -143,3 +143,5 @@
 ## agent_communication:
 ##   - agent: "main"
 ##     message: "Please run backend testing for ASI crawl: create crawl job for https://americanspecialties.com/all-washroom-accessories/, confirm PDFs are found from product pages, classifier runs, and SharePoint upload only includes Product Data / Spec / Submittal / Tech Data docs (exclude Installation). Also verify cancel stops crawl quickly and API stays responsive."
+##   - agent: "testing"
+##     message: "Backend testing COMPLETED successfully. All critical functionality verified: ✓ ASI crawl discovers 823 PDFs ✓ API responsive during crawl ✓ Job cancellation works ✓ Document filtering works (Installation Manuals excluded) ✓ Expected document types found. The crawling, cancellation, and filtering systems are working correctly. Minor issue: ASI classification process slow but doesn't affect core functionality. Ready for main agent to summarize and finish."
