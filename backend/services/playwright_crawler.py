@@ -148,12 +148,16 @@ class PlaywrightCrawler:
                     # Remove fragments
                     full_url = full_url.split('#')[0]
 
-                    # Check if it's a PDF
-                    if full_url.lower().endswith('.pdf') or '/view/' in full_url or '/mediamanager/' in full_url:
+                    # Check if it's a document link
+                    if (
+                        full_url.lower().endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'))
+                        or '/view/' in full_url
+                        or '/mediamanager/' in full_url
+                    ):
                         link_text = await link.inner_text() if link else ''
                         if self._matches_product_lines(full_url, link_text, product_lines):
                             self.pdf_urls.add(full_url)
-                            logger.debug(f"Found PDF: {full_url}")
+                            logger.debug(f"Found document: {full_url}")
                         continue
 
                     # Only follow links within same domain
