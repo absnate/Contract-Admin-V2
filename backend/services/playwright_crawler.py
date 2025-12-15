@@ -154,6 +154,11 @@ class PlaywrightCrawler:
                 if len(self.visited_urls) < max_pages:
                     await asyncio.sleep(1)  # Be polite
                     await self._crawl_page_with_browser(next_url, base_domain, product_lines, max_pages)
+
+            if len(self.visited_urls) % 5 == 0:
+                logger.info(
+                    f"Playwright crawl progress: {len(self.visited_urls)} pages visited, {len(self.pdf_urls)} PDFs found"
+                )
         
         except Exception as e:
             logger.warning(f"Error crawling {url} with Playwright: {str(e)}")
