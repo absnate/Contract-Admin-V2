@@ -70,7 +70,7 @@ class PlaywrightCrawler:
                 await page.goto(url, wait_until="load", timeout=60000)
             
             # Wait for content to load
-            await page.wait_for_timeout(3000)
+            await page.wait_for_timeout(1500)
             
             # Find all links on the page
             links = await page.query_selector_all('a[href]')
