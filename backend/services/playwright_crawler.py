@@ -54,8 +54,8 @@ class PlaywrightCrawler:
         
         self.visited_urls.add(url)
         
-        # Log progress
-        if len(self.visited_urls) % 5 == 0:
+        # Log progress (kept minimal here; detailed progress is logged after processing each page)
+        if len(self.visited_urls) % 20 == 0:
             logger.info(f"Playwright crawl progress: {len(self.visited_urls)} pages visited, {len(self.pdf_urls)} PDFs found")
         
         try:
