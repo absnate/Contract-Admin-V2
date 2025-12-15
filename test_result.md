@@ -119,11 +119,11 @@
 ##         comment: "BACKEND TESTING COMPLETED: ✓ API stays responsive during crawl (avg 0.064s response time). ✓ ASI crawl job successfully discovered 823 PDFs from americanspecialties.com/all-washroom-accessories/. ✓ Job cancellation works correctly - jobs are cancelled immediately and processes stop. ✓ Document type filtering verified on Bradley job: Installation Manuals correctly excluded from upload (2 found, 0 uploaded), expected document types present (Product Data Sheet, Specification Sheet). ✓ Technical PDF classification working (266/332 technical PDFs identified). Minor: ASI job classification process appears slow/stuck but core crawling functionality confirmed working. All critical requirements met."
 ##   - task: "Active Jobs stop/cancel flow UI testing"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "frontend/src/pages/ActiveJobs.js; frontend/src/pages/NewJob.js; frontend/src/pages/BulkUpload.js"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "testing"
