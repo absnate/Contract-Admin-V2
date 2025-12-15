@@ -35,7 +35,7 @@ class CrawlerService:
                 return
             
             # Crawl the domain
-            pdf_links = await self._crawl_domain(domain, product_lines, max_pages=60)
+            pdf_links = await self._crawl_domain(job_id, domain, product_lines, max_pages=60)
             
             logger.info(f"Found {len(pdf_links)} PDF links for job {job_id}")
             
@@ -78,7 +78,7 @@ class CrawlerService:
                 }}
             )
     
-    async def _crawl_domain(self, domain: str, product_lines: List[str], max_pages: int = 500) -> Set[str]:
+    async def _crawl_domain(self, job_id: str, domain: str, product_lines: List[str], max_pages: int = 500) -> Set[str]:
         """Crawl a domain to find PDF links"""
         self.visited_urls.clear()
         self.pdf_urls.clear()
