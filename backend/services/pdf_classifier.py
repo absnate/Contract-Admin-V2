@@ -28,7 +28,6 @@ class PDFClassifier:
             technical_keywords = [
                 'datasheet', 'data sheet', 'spec sheet', 'specification',
                 'technical data', 'tds', 'pds', 'product data',
-                'installation', 'manual', 'operation', 'maintenance',
                 'submittal', 'cut sheet', 'engineering'
             ]
             
