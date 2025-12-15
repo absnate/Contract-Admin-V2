@@ -256,6 +256,13 @@ async def cancel_crawl_job(job_id: str):
     )
     # Best-effort: stop OS process (kills Chromium tree too)
     pid = CRAWL_JOB_PROCS.pop(job_id, None)
+    if not pid:
+        try:
+            job_for_pid = await db.crawl_jobs.find_one({"id": job_id}, {"_id": 0, "worker_pid": 1})
+            pid = job_for_pid.get("worker_pid") if job_for_pid else None
+        except Exception:
+            pid = None
+
     if pid:
         try:
             os.killpg(pid, signal.SIGTERM)
@@ -264,12 +271,6 @@ async def cancel_crawl_job(job_id: str):
                 os.kill(pid, signal.SIGTERM)
             except Exception:
                 pass
-
-    # Also record PID in DB so we can kill it even after a server reload
-    try:
-        await db.crawl_jobs.update_one({"id": job_id}, {"$set": {"worker_pid": pid}})
-    except Exception:
-        pass
 
 
     
