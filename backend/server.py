@@ -144,10 +144,11 @@ async def create_crawl_job(job_data: CrawlJobCreate, background_tasks: Backgroun
     await db.crawl_jobs.insert_one(doc)
     
     # Start crawling in a separate OS process (prevents blocking FastAPI event loop)
+    # Run crawl jobs in a separate OS process. NOTE: daemon=False so the process reliably runs to completion.
     proc = multiprocessing.Process(
         target=run_crawl_job_process,
         args=(job.id, job.domain, job.product_lines, job.manufacturer_name, job.sharepoint_folder),
-        daemon=True,
+        daemon=False,
     )
     proc.start()
     CRAWL_JOB_PROCS[job.id] = proc.pid
@@ -263,6 +264,12 @@ async def cancel_crawl_job(job_id: str):
                 os.kill(pid, signal.SIGTERM)
             except Exception:
                 pass
+
+    # Also record PID in DB so we can kill it even after a server reload
+    try:
+        await db.crawl_jobs.update_one({"id": job_id}, {"$set": {"worker_pid": pid}})
+    except Exception:
+        pass
 
 
     
