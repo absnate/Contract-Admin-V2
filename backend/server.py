@@ -10,6 +10,10 @@ import os
 import logging
 import uuid
 import tempfile
+import multiprocessing
+import signal
+
+
 
 # Import services
 from services.crawler_service import CrawlerService
