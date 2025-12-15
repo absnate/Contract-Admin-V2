@@ -50,12 +50,11 @@ const ActiveJobs = () => {
   });
 
   const handleCancel = (job) => {
-    if (window.confirm(`Are you sure you want to cancel this job for "${job.manufacturer_name}"?`)) {
-      if (job.job_type === 'crawl') {
-        cancelCrawlMutation.mutate(job.id);
-      } else {
-        cancelBulkMutation.mutate(job.id);
-      }
+    // Avoid window.confirm (can be blocked by some browsers/iframes); cancel immediately and show feedback.
+    if (job.job_type === 'crawl') {
+      cancelCrawlMutation.mutate(job.id);
+    } else {
+      cancelBulkMutation.mutate(job.id);
     }
   };
 
