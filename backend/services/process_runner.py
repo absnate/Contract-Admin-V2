@@ -28,6 +28,13 @@ def run_crawl_job_process(
         # Env should already be inherited; dotenv load is best-effort
         pass
 
+    # Ensure env vars from .env are available in spawned process
+    os.environ.setdefault('EMERGENT_LLM_KEY', os.environ.get('EMERGENT_LLM_KEY') or '')
+    os.environ.setdefault('AZURE_CLIENT_ID', os.environ.get('AZURE_CLIENT_ID') or '')
+    os.environ.setdefault('AZURE_CLIENT_SECRET', os.environ.get('AZURE_CLIENT_SECRET') or '')
+    os.environ.setdefault('AZURE_TENANT_ID', os.environ.get('AZURE_TENANT_ID') or '')
+    os.environ.setdefault('SHAREPOINT_SITE_URL', os.environ.get('SHAREPOINT_SITE_URL') or '')
+
     os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', '/pw-browsers')
 
     # Create a new process group so the parent can kill the whole tree (Chromium children, etc.)
