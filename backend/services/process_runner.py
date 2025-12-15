@@ -21,11 +21,14 @@ def run_crawl_job_process(
     """Entry point for running a crawl job in a separate OS process."""
 
     # Ensure env vars (MONGO_URL/DB_NAME/Azure creds/EMERGENT_LLM_KEY) are loaded in child process
+    # Also ensure Playwright browser path is set in the child process.
     try:
         load_dotenv(Path(__file__).resolve().parents[1] / ".env")
     except Exception:
         # Env should already be inherited; dotenv load is best-effort
         pass
+
+    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', '/pw-browsers')
 
     # Create a new process group so the parent can kill the whole tree (Chromium children, etc.)
     try:
