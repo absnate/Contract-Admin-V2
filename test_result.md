@@ -101,3 +101,42 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+## user_problem_statement: Fix crawler failing on https://americanspecialties.com/all-washroom-accessories/ and only upload product data/submittal/spec docs (no installation).
+## backend:
+##   - task: "Crawl americanspecialties.com landing page and discover product PDFs"
+##     implemented: true
+##     working: false
+##     file: "backend/services/crawler_service.py; backend/services/playwright_crawler.py; backend/services/process_runner.py; backend/server.py; backend/services/pdf_classifier.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: false
+##         agent: "main"
+##         comment: "Identified Cloudflare 403 challenge when fetching via aiohttp; forced Playwright on 403/CF. Installed Playwright chromium. Added URL prioritization to go deeper into /product_category/ and /product/. Added cancellation checks to Playwright crawler and moved crawl jobs to separate OS process to keep API responsive. Added upload filter to only allow Product Data/Spec/Submittal/Tech Data docs. Manual curl checks show API stays responsive during crawl; cancellation stops Playwright process tree. Full end-to-end (crawl->classify->upload) not yet verified for ASI."
+## frontend:
+##   - task: "(No UI changes in this iteration)"
+##     implemented: false
+##     working: "NA"
+##     file: ""
+##     stuck_count: 0
+##     priority: "low"
+##     needs_retesting: false
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "No frontend changes; focus is backend crawler robustness + cancellation + upload filtering."
+## metadata:
+##   created_by: "main_agent"
+##   version: "1.0"
+##   test_sequence: 1
+##   run_ui: false
+## test_plan:
+##   current_focus:
+##     - "Crawl americanspecialties.com landing page and discover product PDFs"
+##   stuck_tasks: []
+##   test_all: false
+##   test_priority: "high_first"
+## agent_communication:
+##   - agent: "main"
+##     message: "Please run backend testing for ASI crawl: create crawl job for https://americanspecialties.com/all-washroom-accessories/, confirm PDFs are found from product pages, classifier runs, and SharePoint upload only includes Product Data / Spec / Submittal / Tech Data docs (exclude Installation). Also verify cancel stops crawl quickly and API stays responsive."
