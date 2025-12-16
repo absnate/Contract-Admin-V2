@@ -1,6 +1,7 @@
 import asyncio
 import os
 import logging
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -20,11 +21,22 @@ def run_crawl_job_process(
 ):
     """Entry point for running a crawl job in a separate OS process."""
 
+    # Configure logging for child process - output to stderr so it appears in supervisor logs
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.stderr
+    )
+    child_logger = logging.getLogger(__name__)
+    child_logger.info(f"Child process started for job {job_id}")
+
     # Ensure env vars (MONGO_URL/DB_NAME/Azure creds/EMERGENT_LLM_KEY) are loaded in child process
     # Also ensure Playwright browser path is set in the child process.
     try:
         load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=True)
-    except Exception:
+        child_logger.info("Environment variables loaded from .env")
+    except Exception as e:
+        child_logger.warning(f"Could not load .env: {e}")
         # Env should already be inherited; dotenv load is best-effort
         pass
 
