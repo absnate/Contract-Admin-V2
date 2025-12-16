@@ -513,25 +513,25 @@ class CrawlerService:
                         failed_downloads += 1
                         continue
 
-                        # Upload to SharePoint
-                        sharepoint_id = await self.sharepoint_service.upload_pdf(
-                            filename=pdf['filename'],
-                            content=pdf_content,
-                            folder_path=sharepoint_folder
-                        )
+                    # Upload to SharePoint
+                    sharepoint_id = await self.sharepoint_service.upload_pdf(
+                        filename=pdf['filename'],
+                        content=pdf_content,
+                        folder_path=sharepoint_folder
+                    )
 
-                        # Update PDF record
-                        await self.db.pdf_records.update_one(
-                            {"id": pdf['id']},
-                            {"$set": {
-                                "sharepoint_uploaded": True,
-                                "sharepoint_id": sharepoint_id
-                            }}
-                        )
+                    # Update PDF record
+                    await self.db.pdf_records.update_one(
+                        {"id": pdf['id']},
+                        {"$set": {
+                            "sharepoint_uploaded": True,
+                            "sharepoint_id": sharepoint_id
+                        }}
+                    )
 
-                        uploaded_count += 1
-                        if uploaded_count % 10 == 0:
-                            logger.info(f"Uploaded {uploaded_count} PDFs to SharePoint so far")
+                    uploaded_count += 1
+                    if uploaded_count % 10 == 0:
+                        logger.info(f"Uploaded {uploaded_count} PDFs to SharePoint so far")
 
                 except Exception as e:
                     logger.error(f"Error uploading PDF {pdf['filename']} to SharePoint: {str(e)}")
