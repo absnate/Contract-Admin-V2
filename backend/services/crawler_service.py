@@ -474,10 +474,12 @@ class CrawlerService:
         logger.info(f"Found {len(technical_pdfs)} approved submittal data sheets for upload")
         
         uploaded_count = 0
+        failed_downloads = 0
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+            'Referer': 'https://www.google.com/',
         }
 
         async with aiohttp.ClientSession(headers=headers) as session:
@@ -492,13 +494,24 @@ class CrawlerService:
                     continue
 
                 try:
-                    # Download PDF
+                    # Download PDF - try aiohttp first
+                    pdf_content = None
                     async with session.get(pdf['source_url'], timeout=aiohttp.ClientTimeout(total=60)) as response:
-                        if response.status != 200:
+                        if response.status == 200:
+                            pdf_content = await response.read()
+                        elif response.status == 403:
+                            # Site blocks direct downloads - try with Playwright
+                            logger.info(f"HTTP 403 for {pdf['filename']}, trying Playwright download...")
+                            pdf_content = await self._download_with_playwright(pdf['source_url'])
+                        else:
                             logger.warning(f"Skipping upload (HTTP {response.status}): {pdf['source_url']}")
+                            failed_downloads += 1
                             continue
-
-                        pdf_content = await response.read()
+                    
+                    if not pdf_content:
+                        logger.warning(f"Failed to download {pdf['filename']}")
+                        failed_downloads += 1
+                        continue
 
                         # Upload to SharePoint
                         sharepoint_id = await self.sharepoint_service.upload_pdf(
