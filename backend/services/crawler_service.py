@@ -404,7 +404,7 @@ class CrawlerService:
                             product_lines=product_lines
                         )
 
-                        # Save PDF record
+                        # Save PDF record with extended classification data
                         pdf_record = {
                             "id": str(datetime.now(timezone.utc).timestamp()).replace('.', ''),
                             "job_id": job_id,
@@ -414,6 +414,8 @@ class CrawlerService:
                             "is_technical": classification['is_technical'],
                             "classification_reason": classification['reason'],
                             "document_type": classification.get('document_type'),
+                            "allowed_matches": classification.get('allowed_matches', []),
+                            "disallowed_matches": classification.get('disallowed_matches', []),
                             "sharepoint_uploaded": False,
                             "sharepoint_id": None,
                             "created_at": datetime.now(timezone.utc).isoformat()
@@ -421,9 +423,15 @@ class CrawlerService:
 
                         await self.db.pdf_records.insert_one(pdf_record)
                         classified_count += 1
+                        
+                        # Track approved vs skipped
+                        if classification['is_technical']:
+                            approved_count += 1
+                        else:
+                            skipped_count += 1
 
                         if classified_count % 25 == 0:
-                            logger.info(f"Classified {classified_count} PDFs so far")
+                            logger.info(f"Classified {classified_count} PDFs: {approved_count} approved, {skipped_count} skipped")
 
                 except Exception as e:
                     logger.error(f"Error classifying PDF {pdf_url}: {str(e)}")
