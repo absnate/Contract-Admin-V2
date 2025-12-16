@@ -165,8 +165,9 @@
     message: "Starting UI testing for Active Jobs stop/cancel flow: 1) Create new crawl job via /new-job 2) Navigate to /active-jobs and verify job appears 3) Test Stop Job functionality 4) Verify no confirm dialog blocks click 5) Verify button disabled during request 6) Test bulk upload job if possible. Testing comprehensive UI flow end-to-end."
 ## test_plan:
 ##   current_focus:
-##     - "Active Jobs stop/cancel flow UI testing"
-##   stuck_tasks: []
+##     - "SharePoint upload functionality after critical fixes"
+##   stuck_tasks:
+##     - "SharePoint upload functionality after critical fixes"
 ##   test_all: false
 ##   test_priority: "high_first"
 ## agent_communication:
