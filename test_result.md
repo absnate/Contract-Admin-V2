@@ -117,6 +117,17 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "BACKEND TESTING COMPLETED: ✓ API stays responsive during crawl (avg 0.064s response time). ✓ ASI crawl job successfully discovered 823 PDFs from americanspecialties.com/all-washroom-accessories/. ✓ Job cancellation works correctly - jobs are cancelled immediately and processes stop. ✓ Document type filtering verified on Bradley job: Installation Manuals correctly excluded from upload (2 found, 0 uploaded), expected document types present (Product Data Sheet, Specification Sheet). ✓ Technical PDF classification working (266/332 technical PDFs identified). Minor: ASI job classification process appears slow/stuck but core crawling functionality confirmed working. All critical requirements met."
+##   - task: "SharePoint upload functionality after critical fixes"
+##     implemented: true
+##     working: false
+##     file: "backend/services/sharepoint_service.py; backend/services/crawler_service.py"
+##     stuck_count: 1
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##       - working: false
+##         agent: "testing"
+##         comment: "CRITICAL ISSUE IDENTIFIED: SharePoint upload pipeline is blocked. Testing shows: ✓ Crawling works (332 PDFs found) ✓ Classification works (115+ PDFs classified despite Gemini API errors, filename fallback functional) ✓ Azure AD credentials appear valid (no immediate auth errors) ❌ Upload phase never starts - jobs remain stuck in 'classifying' status with 0 PDFs uploaded despite having classified PDFs ready for upload. The crawl->classify pipeline works but transition to upload phase is failing. Root cause investigation needed for SharePoint upload trigger logic and potential authentication issues during actual upload attempts."
 ##   - task: "Active Jobs stop/cancel flow UI testing"
 ##     implemented: true
 ##     working: true
