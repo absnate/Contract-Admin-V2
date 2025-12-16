@@ -431,16 +431,21 @@ class CrawlerService:
         )
     
     async def _upload_to_sharepoint(self, job_id: str, sharepoint_folder: str):
-        """Upload technical PDFs to SharePoint"""
-        # Get all technical PDFs for this job
-        # Upload *technical* documents, excluding installation/operation manuals.
-        # Many sites do not label PDFs cleanly; relying solely on document_type can skip valid specs/submittals.
+        """Upload ONLY submittal technical data PDFs to SharePoint
+        
+        STRICT FILTERING: Only uploads PDFs that passed the classifier's strict rules:
+        - Must have matched allowed keywords (submittal data, technical data, data sheet, etc.)
+        - Must NOT have matched any disallowed keywords (installation, warranty, spec, etc.)
+        """
+        # Get only approved submittal data sheets for this job
+        # is_technical=True means it passed ALL strict classifier rules
         technical_pdfs = await self.db.pdf_records.find({
             "job_id": job_id,
             "is_technical": True,
-            "sharepoint_uploaded": False,
-            "document_type": {"$nin": ["Installation Manual", "Operation Manual"]}
+            "sharepoint_uploaded": False
         }).to_list(1000)
+        
+        logger.info(f"Found {len(technical_pdfs)} approved submittal data sheets for upload")
         
         uploaded_count = 0
 
