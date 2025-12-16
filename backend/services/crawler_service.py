@@ -439,10 +439,21 @@ class CrawlerService:
         if failed_fetches:
             logger.info(f"PDF fetch failures during classification: {failed_fetches}")
         
+        # Log final classification summary
+        logger.info(f"Classification complete for job {job_id}:")
+        logger.info(f"  Total evaluated: {classified_count}")
+        logger.info(f"  Approved (submittal data sheets): {approved_count}")
+        logger.info(f"  Skipped (disqualified): {skipped_count}")
+        
         # Update job with classified count
         await self.db.crawl_jobs.update_one(
             {"id": job_id},
-            {"$set": {"total_pdfs_classified": classified_count, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {
+                "total_pdfs_classified": classified_count,
+                "total_pdfs_approved": approved_count,
+                "total_pdfs_skipped": skipped_count,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
         )
     
     async def _upload_to_sharepoint(self, job_id: str, sharepoint_folder: str):
