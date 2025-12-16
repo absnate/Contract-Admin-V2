@@ -321,16 +321,23 @@ class CrawlerService:
         return has_relevant_keyword or not product_lines
     
     async def _classify_pdfs(self, job_id: str, pdf_links: Set[str], product_lines: List[str], manufacturer_name: str):
-        """Classify PDFs using AI"""
+        """Classify PDFs using STRICT submittal data sheet filtering
+        
+        ONLY downloads PDFs that are clearly submittal-level technical data sheets.
+        Rejects: installation, warranty, specs, catalogs, BIM, marketing, etc.
+        """
         classified_count = 0
+        approved_count = 0
+        skipped_count = 0
         
         # Convert set to list to avoid "set changed size during iteration" error
         pdf_links_list = list(pdf_links)
         # Cap how many PDFs we classify per job to avoid huge domains producing thousands of PDFs.
-        # This keeps jobs practical while still being useful.
         pdf_links_list = pdf_links_list[:400]
 
-        logger.info(f"Starting classification of {len(pdf_links_list)} PDFs")
+        logger.info(f"Starting STRICT classification of {len(pdf_links_list)} PDFs")
+        logger.info(f"ALLOWED: submittal data, technical data, data sheet, datasheet, submittals")
+        logger.info(f"DISALLOWED: installation, warranty, spec, catalog, BIM, marketing, etc.")
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
