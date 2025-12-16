@@ -547,25 +547,59 @@ class CrawlerService:
     
     async def _download_with_playwright(self, url: str) -> bytes:
         """Download a PDF using Playwright browser for sites that block direct requests"""
+        import tempfile
+        import os as os_module
+        
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 context = await browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    accept_downloads=True
                 )
                 page = await context.new_page()
                 
-                # Navigate to the PDF URL
-                response = await page.goto(url, wait_until='networkidle', timeout=30000)
-                
-                if response and response.status == 200:
-                    content = await response.body()
+                # Handle download event - Playwright triggers download for PDF files
+                download_path = None
+                try:
+                    async with page.expect_download(timeout=30000) as download_info:
+                        await page.goto(url, timeout=30000)
+                    download = await download_info.value
+                    
+                    # Save to temp file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+                        download_path = tmp.name
+                    await download.save_as(download_path)
+                    
+                    # Read content
+                    with open(download_path, 'rb') as f:
+                        content = f.read()
+                    
+                    # Cleanup
+                    os_module.unlink(download_path)
                     await browser.close()
-                    return content
-                else:
-                    logger.warning(f"Playwright download failed for {url}: status {response.status if response else 'None'}")
+                    
+                    if len(content) > 0:
+                        logger.info(f"Playwright download successful: {len(content)} bytes")
+                        return content
+                    else:
+                        return None
+                        
+                except Exception as download_error:
+                    # Maybe it's a direct response, not a download
+                    try:
+                        response = await page.goto(url, wait_until='load', timeout=30000)
+                        if response and response.status == 200:
+                            content = await response.body()
+                            await browser.close()
+                            return content
+                    except:
+                        pass
+                    
                     await browser.close()
+                    logger.warning(f"Playwright download failed: {str(download_error)}")
                     return None
+                    
         except Exception as e:
             logger.error(f"Playwright download error for {url}: {str(e)}")
             return None
