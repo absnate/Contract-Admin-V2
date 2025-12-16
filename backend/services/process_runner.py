@@ -57,8 +57,10 @@ def run_crawl_job_process(
     db = client[db_name]
 
     crawler_service = CrawlerService(db)
+    child_logger = logging.getLogger(__name__)
 
     try:
+        child_logger.info(f"Starting crawl for job {job_id}, domain: {domain}, folder: {sharepoint_folder}")
         asyncio.run(
             crawler_service.start_crawl(
                 job_id=job_id,
@@ -68,8 +70,26 @@ def run_crawl_job_process(
                 sharepoint_folder=sharepoint_folder,
             )
         )
+        child_logger.info(f"Crawl job {job_id} completed successfully")
+    except Exception as e:
+        child_logger.error(f"Crawl job {job_id} failed with error: {e}", exc_info=True)
+        # Update job status to failed
+        try:
+            from datetime import datetime, timezone
+            asyncio.run(db.crawl_jobs.update_one(
+                {"id": job_id},
+                {"$set": {
+                    "status": "failed",
+                    "error_message": str(e),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            ))
+        except Exception:
+            pass
+        raise
     finally:
         try:
             client.close()
+            child_logger.info(f"MongoDB connection closed for job {job_id}")
         except Exception:
             pass
