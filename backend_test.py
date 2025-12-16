@@ -181,7 +181,7 @@ class BackendTester:
 async def run_asi_crawl_test():
     """Run the main ASI crawl test"""
     # Use external API URL from frontend/.env
-    base_url = "https://pdfharvester-1.preview.emergentagent.com"
+    base_url = "https://techdoc-spider.preview.emergentagent.com"
     tester = BackendTester(base_url)
     
     logger.info("=== Starting ASI Crawl Test ===")
@@ -268,7 +268,7 @@ async def run_asi_crawl_test():
 
 async def run_cancellation_test():
     """Test job cancellation functionality"""
-    base_url = "https://pdfharvester-1.preview.emergentagent.com"
+    base_url = "https://techdoc-spider.preview.emergentagent.com"
     tester = BackendTester(base_url)
     
     logger.info("=== Starting Cancellation Test ===")

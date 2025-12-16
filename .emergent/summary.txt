@@ -1,63 +1,472 @@
-<analysis>**original_problem_statement:** The user wants to build an AI agent that crawls manufacturer websites to find and download specific technical product documentation PDFs (like data sheets, installation manuals, etc.). The agent should take a manufacturer's name, domain, and an optional list of product lines as input. It must then upload the downloaded PDFs to a specified SharePoint folder. The agent needs to differentiate between technical documents and marketing materials, and it should provide a summary report of its actions. A subsequent feature request was to add a bulk upload capability, where the user provides an  file containing part numbers and direct URLs to the technical data sheets.
+<analysis>**original_problem_statement:** The user wants to build an AI agent that crawls manufacturer websites to find and download specific technical product documentation PDFs (like data sheets, installation manuals, etc.). The agent should take a manufacturer's name, domain, and an optional list of product lines as input. It must then upload the downloaded PDFs to a specified SharePoint folder. The agent needs to differentiate between technical documents and marketing materials and provide a summary report. A subsequent feature request was to add a bulk upload capability, where the user provides an  file containing part numbers and direct URLs to the technical data sheets.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a React frontend and FastAPI backend.
-- **Web Crawling**: A crawler that uses both standard  for static sites and  to handle JavaScript-heavy Single Page Applications (SPAs). It attempts to find PDF links within a given domain.
-- **Bulk Upload**: A feature to process  files. The user can upload a file with part numbers and direct PDF URLs, which the system then downloads and uploads to SharePoint. For this flow, AI classification is skipped.
-- **SharePoint Integration**: The application can upload files to a user-specified folder path in SharePoint, creating nested folders as needed. It handles duplicates by skipping files that already exist.
-- **AI Classification**: For the web crawl flow, it uses Gemini to classify if a found PDF is a technical document.
-- **Job Management**: The UI provides a dashboard to view statistics, create new jobs (crawl or bulk), and an Active Jobs page to view and stop ongoing processes.
+A full-stack application with a React frontend and a FastAPI backend.
+-   **Web Crawling**: A crawler using  to handle JavaScript-heavy sites. Crawling now runs in a separate OS process to prevent API server timeouts.
+-   **Bulk Upload**: A feature to process  files with direct PDF URLs.
+-   **SharePoint Integration**: The application can upload files to a user-specified folder in SharePoint.
+-   **AI Classification**: Uses Gemini to classify if a found PDF is a technical document.
+-   **Job Management**: The UI provides a dashboard to create new jobs, and an Active Jobs page to view and stop ongoing processes. The Stop Job button is now more responsive.
 
 **Last working item**:
--   **Last item agent was working**: Investigating a user report that the web crawler is not working for the domain: . The user expects the crawler to identify this as a landing page and search deeper for product pages and their corresponding PDFs. The agent had just begun investigating.
--   **Status**: IN PROGRESS
+-   **Last item agent was working**: The user reported that the application has failed, with the most recent issue being that successfully crawled PDFs are not being uploaded to the designated SharePoint folder. The agent had just acknowledged this critical bug report and was about to start debugging.
+-   **Status**: NOT STARTED
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent. The agent should start by using  to inspect the page's HTML, then use a test script to run the  against the specific URL to observe its behavior and any errors in the logs.
--   **User Testing Done**: N
+-   **Which testing method agent to use?**: backend testing agent. The agent should start by examining the backend logs for errors related to SharePoint. A new crawl job should be initiated for a URL known to yield PDFs (e.g., from ) to trace the execution flow, specifically monitoring the interaction between  and  during the upload phase.
+-   **User Testing Done**: Y
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: The web crawler fails to find PDFs for the given URL: . (Priority: P0)
+-   **Issue 1**: Files found by the crawler are not being uploaded to SharePoint. (Priority: P0)
+-   **Issue 2**: Crawler processes can become defunct (zombie) processes after a job is cancelled or completes, leading to resource leaks. (Priority: P1)
 
 **Issues Detail**:
--   **Issue 1**: Web crawler not working for .
-    -   **Attempted fixes**: No fixes have been attempted for this specific URL. Previous work involved adding Playwright to handle similar SPA sites, but this new site may present a different challenge.
+-   **Issue 1**:
+    -   **Attempted fixes**: No direct fixes have been attempted for this specific failure. It appears to be a regression, likely introduced after the major refactoring that moved the crawler to a separate process. The agent also had to re-add missing credentials to , which may be related.
     -   **Next debug checklist**:
-        1.  Examine the most recent job logs for  to find any specific errors or clues.
-        2.  Use  to inspect the initial HTML. Determine if it's a SPA that requires JavaScript.
-        3.  Execute the Playwright crawler () directly on this URL and analyze the log output for link discovery and navigation logic.
-        4.  Review the link filtering logic in  within  to ensure it's not incorrectly discarding valid navigation links on the landing page.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature of the application. Fixing it will make the crawler more robust and capable of handling different website structures, directly addressing the user's primary requirement.
+        1.  Verify the presence and correctness of , , and  in .
+        2.  Check the latest backend logs (==> /var/log/supervisor/backend.err.log <==
+2025-12-15 21:37:12,211 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:37:12,212 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:37:12,215 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:37:12,215 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/process_runner.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:39:57,115 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:39:57,116 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [728]
+INFO:     Started server process [1963]
+INFO:     Waiting for application startup.
+2025-12-15 21:39:59,919 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:39:59,920 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:39:59,923 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:39:59,924 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:40:08,146 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:40:08,147 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1963]
+INFO:     Stopping reloader process [726]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [2012] using WatchFiles
+INFO:     Started server process [2014]
+INFO:     Waiting for application startup.
+2025-12-15 21:40:11,048 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:40:11,049 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:40:11,052 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:40:11,052 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:42:31,624 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:42:31,625 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2014]
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Started server process [3094]
+INFO:     Waiting for application startup.
+2025-12-15 21:42:34,538 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:42:34,539 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:42:34,542 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:42:34,542 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:43:09,332 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:43:09,332 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3094]
+INFO:     Started server process [3382]
+INFO:     Waiting for application startup.
+2025-12-15 21:43:12,045 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:43:12,045 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:43:12,048 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:43:12,048 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:43:49,041 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:43:49,042 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3382]
+INFO:     Started server process [3591]
+INFO:     Waiting for application startup.
+2025-12-15 21:43:51,553 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:43:51,553 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:43:51,556 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:43:51,557 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:43:59,478 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:43:59,479 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3591]
+INFO:     Stopping reloader process [2012]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [3640] using WatchFiles
+INFO:     Started server process [3642]
+INFO:     Waiting for application startup.
+2025-12-15 21:44:02,148 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:44:02,148 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:44:02,152 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:44:02,152 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+Skipping PDF (HTTP 403): https://www.activarcpg.com/wp-content/uploads/Decals-Die-Cut-Lettering-Signs.pdf
+Skipping PDF (HTTP 403): https://www.activarcpg.com/wp-content/uploads/Floor-Door-Cross-Reference.pdf
+Skipping PDF (HTTP 403): https://www.activarcpg.com/wp-content/uploads/Entrance-Mats-Grates-Tread-Color-and-Style-Guide.pdf
+Skipping PDF (HTTP 403): https://www.activarcpg.com/wp-content/uploads/Fire-Extinguisher-Bracket-Submittal-MB810C.pdf
+Skipping PDF (HTTP 403): https://www.activarcpg.com/wp-content/uploads/Fire-Extinguisher-Galaxy-C-Submittal.pdf
+WARNING:  WatchFiles detected changes in 'services/process_runner.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:51:20,480 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:51:20,480 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3642]
+INFO:     Started server process [5052]
+INFO:     Waiting for application startup.
+2025-12-15 21:51:23,244 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:51:23,244 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:51:23,248 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:51:23,248 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/process_runner.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:51:33,777 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:51:33,778 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5052]
+INFO:     Started server process [5100]
+INFO:     Waiting for application startup.
+2025-12-15 21:51:36,747 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:51:36,747 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:51:36,751 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:51:36,751 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:51:45,171 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:51:45,172 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5100]
+INFO:     Stopping reloader process [3640]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [5149] using WatchFiles
+INFO:     Started server process [5151]
+INFO:     Waiting for application startup.
+2025-12-15 21:51:47,916 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:51:47,917 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:51:47,920 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:51:47,920 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/crawler_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-15 21:56:06,358 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-15 21:56:06,359 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5151]
+INFO:     Stopping reloader process [5149]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [7064] using WatchFiles
+INFO:     Started server process [7066]
+INFO:     Waiting for application startup.
+2025-12-15 21:56:45,453 - server - INFO - Starting PDF DocSync Agent...
+2025-12-15 21:56:45,453 - services.scheduler_service - INFO - Scheduler started
+2025-12-15 21:56:45,457 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-15 21:56:45,457 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [73]
+INFO:     Waiting for application startup.
+2025-12-16 16:09:25,698 - server - INFO - Starting PDF DocSync Agent...
+2025-12-16 16:09:25,699 - services.scheduler_service - INFO - Scheduler started
+2025-12-16 16:09:25,709 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-16 16:09:25,709 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+Error in crawl job 0e3d537b-b356-42e1-947b-15d1b7c6fd07: BrowserType.launch: Executable doesn't exist at /pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     playwright install                                     ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+WARNING:  WatchFiles detected changes in 'services/crawler_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-12-16 16:27:32,613 - services.scheduler_service - INFO - Scheduler shutdown
+2025-12-16 16:27:32,613 - server - INFO - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     Finished server process [73]
+INFO:     Started server process [410]
+INFO:     Waiting for application startup.
+2025-12-16 16:27:35,454 - server - INFO - Starting PDF DocSync Agent...
+2025-12-16 16:27:35,454 - services.scheduler_service - INFO - Scheduler started
+2025-12-16 16:27:35,458 - services.scheduler_service - INFO - Loaded 0 schedules
+2025-12-16 16:27:35,459 - server - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+
+==> /var/log/supervisor/backend.out.log <==
+INFO:     10.64.162.106:43276 - "POST /api/crawl-jobs/07736cea-80f9-4d83-a96e-40f022386543/cancel HTTP/1.1" 200 OK
+INFO:     10.64.128.44:59514 - "GET /api/active-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:59514 - "GET /api/active-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:43276 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:50806 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:37504 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:60540 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:46652 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:46652 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:39318 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:36308 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:36308 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:39326 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:39326 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:36784 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:48778 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:41272 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:41272 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:55364 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.242:53342 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:53342 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:60556 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:54514 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:55102 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:55102 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:55816 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:35180 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:55816 - "GET /api/crawl-jobs/07736cea-80f9-4d83-a96e-40f022386543 HTTP/1.1" 200 OK
+INFO:     10.64.139.9:55816 - "GET /api/crawl-jobs/07736cea-80f9-4d83-a96e-40f022386543/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:55816 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:45620 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:34944 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:49590 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:49590 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:54910 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:39426 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:34486 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.242:49894 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:49894 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:35688 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:37512 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:38154 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:35694 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:51834 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:60912 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:60912 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:60912 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.242:51090 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:59956 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:38012 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:50482 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:59076 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:48492 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:57672 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:57672 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.242:35552 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:59344 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:39906 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:39906 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:58846 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:60602 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:58856 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:36058 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.106:42032 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:43848 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:38752 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:40696 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:42958 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:46014 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:45318 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:45310 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:45310 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:41906 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:53014 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49652 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:53048 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:40676 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:60516 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:60516 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46532 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46532 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:58384 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:35008 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:35946 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:57494 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:57494 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:57494 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:58978 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43922 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43922 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43922 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:46870 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:46870 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:54586 - "POST /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:54586 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.130.187:41800 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49168 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49182 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49190 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:45870 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.130.187:41298 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:41310 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.201.223:54682 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:49318 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.139.9:43950 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:58350 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.162.242:50158 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:33064 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.162.242:45146 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:54138 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.162.106:54144 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07/pdfs HTTP/1.1" 200 OK
+INFO:     10.64.162.242:45158 - "GET /api/crawl-jobs/0e3d537b-b356-42e1-947b-15d1b7c6fd07 HTTP/1.1" 200 OK
+INFO:     10.64.162.106:54144 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:60218 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:36442 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:36442 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:37348 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:56092 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.44:37364 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.162.106:45560 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.162.242:49480 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.139.9:60826 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.139.9:45072 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.128.44:54268 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.129.19:36178 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.201.223:45270 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:35738 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:35746 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:50724 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:34150 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:34150 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:34150 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:56412 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46566 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:37964 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:50122 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:50122 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:50122 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:39094 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:59972 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:59972 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:34576 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46462 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46462 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:36892 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:39718 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:40466 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:40466 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:59270 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:59270 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:48710 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:34504 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:39942 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:34520 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:34520 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:44430 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:44430 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:51914 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:51914 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:44548 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:44548 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:44548 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:54472 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:40696 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:57412 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:43128 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:43128 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:43130 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:32900 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:59762 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:46148 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43774 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43782 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:58824 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:53986 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:38654 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:38654 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:33284 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:50872 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:48020 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:50888 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43224 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:57264 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:43228 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:45180 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:45186 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.198:40550 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:47872 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:54698 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.198:43870 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:58148 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:58148 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:58148 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:58148 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:56952 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.187:37754 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.130.187:56952 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49124 - "GET /api/crawl-jobs HTTP/1.1" 200 OK
+INFO:     10.64.201.223:49108 - "GET /api/stats HTTP/1.1" 200 OK) for errors during the file upload step.
+        3.  Review  to ensure the authentication and upload logic is sound.
+        4.  Add extensive logging in  (within ) and  to trace the SharePoint API calls and their responses.
+        5.  Run a small, targeted crawl job and monitor the logs in real-time.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical failure of the application's core purpose. Fixing it will restore the primary functionality of archiving documents.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+    -   **Blocked on other issue**: None
+
+-   **Issue 2**:
+    -   **Attempted fixes**: The agent refactored the crawler to use  to solve API timeouts. To handle cancellation,  was added to the cancellation endpoint. However, this is not a clean shutdown method and is likely the cause of the zombie processes.
+    -   **Next debug checklist**:
+        1.  Analyze  to ensure the child process is managed correctly.
+        2.  Implement a more graceful shutdown mechanism. Instead of , use a shared flag or  that the child process checks periodically, allowing it to clean up (e.g., close the Playwright browser) and exit cleanly.
+        3.  Ensure  in  is called in a  block to guarantee execution.
+    -   **Why fix this issue and what will be achieved with the fix?**: Prevents resource leaks and improves the long-term stability of the application.
     -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: Y (The crawler has required multiple fixes to handle different website architectures).
-    -   **Should Test frontend/backend/both after fix?**: Backend. A successful crawl job that finds and processes PDFs will be sufficient validation.
-    -   **Blocked on other issue**: None.
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+    -   **Blocked on other issue**: None
 
 **In progress Task List**:
 None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **Task 1 (P1)**: Implement faster UI feedback for the Stop Job button. The agent suggested reducing the auto-refresh interval on the  page from 3 seconds to 1 second to make the UI feel more responsive.
-    -   **Task 2 (P1)**: Fully implement and test the weekly recrawl scheduler. The data models contain a  flag, but the logic in  to periodically trigger these jobs is incomplete.
+    -   **Task 1 (P1)**: Fully implement and test the weekly recrawl scheduler. The logic in  is currently a placeholder.
 
 **Completed work in this session**
--   **Feature**: Initial application setup with React frontend and FastAPI backend.
--   **Feature**: Web crawler for finding technical PDFs on manufacturer websites.
--   **Feature**: SharePoint integration for uploading documents.
--   **Feature**: Bulk PDF upload functionality using  files.
--   **Feature**: Job management UI to view active jobs and request cancellation.
--   **Enhancement**: Added Playwright support to the crawler to handle JavaScript-heavy websites (SPAs).
--   **Enhancement**: Optimized duplicate file handling to skip instead of replace, improving performance.
--   **Enhancement**: Improved dashboard statistics to correctly count both crawl and bulk upload jobs.
--   **Bugfix**: Corrected SharePoint integration to upload files to specified nested folders instead of the root.
--   **Bugfix**: Resolved a Set changed size during iteration runtime error in the crawler service.
--   **Bugfix**: Implemented cancellation checks within long-running loops (downloading/uploading) to ensure the Stop Job feature works effectively.
--   **Bugfix**: Cleared stuck jobs from a previous broken state.
+-   **Refactor**: Moved the web crawling logic into a separate OS process using  to prevent the main API from becoming unresponsive. A new  service was created to manage this.
+-   **Bugfix**: Resolved the crawler failing on  by adding a standard  header to requests.
+-   **Bugfix**: Dramatically improved the Stop Job UX by removing the  dialog, adding optimistic UI updates, and implementing backend logic to terminate the crawler's background process.
+-   **Bugfix**: Fixed PDF classification failures by ensuring the  was correctly placed in the  file.
+-   **Bugfix**: Addressed an issue where the crawler would not find PDFs on  by refining the link-scoring logic in .
+-   **Enhancement**: Reduced the auto-refresh interval on the  page to  for a more responsive feel.
+-   **Bugfix**: Resolved a  error by correcting the Playwright executable path within the new process runner.
 
 **Earlier issues found/mentioned but not fixed**
-None. All previously identified issues have been addressed or are listed in the pending section.
+None.
 
 **Known issue recurrence from previous fork**
 N/A
@@ -66,82 +475,69 @@ N/A
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI,  for concurrent operations,  for HTTP requests.
--   **Frontend**: React,  for API calls, TailwindCSS for styling.
--   **Database**: MongoDB (managed via  async driver), using Pydantic models for data validation.
--   **Web Scraping**: A hybrid approach using  for static HTML and  for dynamic, JavaScript-rendered websites.
--   **File Handling**:  for reading  files.
--   **Authentication**: Microsoft Graph API authentication using client ID, secret, and tenant ID for SharePoint access.
+-   **Backend**: FastAPI, .
+-   **Process Management**:  is now used to run crawlers as separate OS processes, avoiding blocking of the main API server. This is a critical architectural change.
+-   **Frontend**: React, , TailwindCSS.
+-   **Database**: MongoDB with .
+-   **Web Scraping**: .
 
 **key DB schema**
-The application uses two main collections in MongoDB, structured via Pydantic models:
--    (for web crawls): 
--    (for Excel uploads): 
+-   : 
+-   : 
 
 **changes in tech stack**
--    was added for reading Excel files.
--    was added to enable crawling of JavaScript-heavy websites.
+-   The application architecture was significantly changed to use Python's  library for background tasks.
 
 **All files of reference**
--   : Contains the primary logic for orchestrating web crawls.
--   : The specialized crawler for dynamic/SPA websites. This is critical for modern sites.
--   : Manages the entire bulk upload workflow.
--   : Handles all interactions with the SharePoint API, including authentication and file uploads.
--   : Defines all API endpoints and data models.
--   : The UI for the critical stop job feature.
--   : The main entry point for the user.
--   : Contains the necessary credentials for the SharePoint integration.
+-   : **Crucial file to debug the current P0 issue.**
+-   : **New core file**. Manages running tasks in a background process.
+-   : Modified to use  to start jobs and updated to handle process cancellation.
+-   : The main service logic that is executed by the process runner.
+-   : UI updated for better Stop Job responsiveness.
+-   : Must contain valid SharePoint and LLM credentials.
 
 **Areas that need refactoring**
--   The  and  files have some overlapping responsibilities. The logic could be better integrated to reduce code duplication, especially around link filtering and PDF discovery.
--   The stop job implementation relies on status checks inside loops. This is functional but can be improved. A more robust task management system (like Celery or ARQ) could handle cancellation more gracefully.
+-   The process cancellation logic, which currently uses , is not robust and is the likely cause of zombie processes. It should be replaced with a more graceful shutdown mechanism using inter-process communication (e.g., ).
 
 **key api endpoints**
--   : Retrieves dashboard statistics.
--   : Creates a new web crawl job.
--   : Lists all crawl jobs.
--   : Lists currently active jobs (both crawl and bulk).
--   : Cancels an active job.
--   : Creates a new bulk upload job from an  file.
--   : Lists all bulk upload jobs.
+-   : Spawns a background crawl process.
+-   : Sets job status to cancelled and attempts to terminate the associated background process.
+-   : Lists all jobs not in a terminal state.
 
 **Critical Info for New Agent**
--   The web crawler's reliability is the biggest challenge. It has failed on multiple sites, requiring iterative fixes. The current issue with  is another example. Be prepared to debug and enhance the crawler logic in .
--   The Stop Job functionality was a major focus. It now works by checking a cancelled status in the database during long-running loops. Any new loops must include this check ().
--   SharePoint authentication uses the Azure credentials provided by the user, which are stored in .
--   Duplicate PDFs are intentionally skipped during upload to improve performance, per user request. Do not change this behavior back to replace without user instruction.
+-   **The application is BROKEN.** The user has reported that the core feature of uploading files to SharePoint is failing. This is the absolute highest priority task.
+-   **Background tasks have changed.** Crawling is now done in a separate OS process via . This fixed API timeouts but introduced new problems with process management and cancellation. You must understand .
+-   **Verify credentials first.** Before debugging, confirm that , , , and  exist and are correct in . Missing credentials caused problems in this session.
+-   **Zombie processes are a known issue.** The current method of killing processes is leaving defunct processes behind. This is a P1 issue to be addressed after the P0 SharePoint bug is fixed.
 
 **documents created in this job**
--   : Contains the UI/UX design specification (Swiss Control Room).
+None.
 
 **Last 10 User Messages and any pending user messages**
-1.  **User**: Stop job isn't working for stuck jobs. (Resolved: Agent manually cleared stuck jobs and explained new jobs will work correctly).
-2.  **User**: I'm trying to stop a new job and it's not stopping. (Investigated: Agent confirmed the stop *did* work but took a few seconds, leading to perceived unresponsiveness).
-3.  **User**: Please confirm the Stop Job button is coded correctly. (Completed: Agent verified the frontend-to-backend call chain).
-4.  **User**: Would skipping duplicates be faster than replacing them? (Answered: Yes, significantly faster).
-5.  **User**: OK, change to skipping duplicates. (Completed: Agent updated the SharePoint service).
-6.  **User**: The web crawler is not working for . It should see it as a landing page and search deeper. (Pending: This is the current, highest-priority task).
+-   **User**:  - (Status: **Resolved**)
+-   **User**:  - (Status: **In Progress**, led to current P0 bug)
+-   **User**:  - (Status: **Resolved**, provided info for debugging)
+-   **User**:  (Chose a debug option) - (Status: **Resolved**)
+-   **User**:  - (Status: **Resolved**)
+-   **User**:  - (Status: **PENDING**, this is the current P0 task)
+-   **User**:  - (Status: **Resolved**, acknowledged the plan)
 
 **Project Health Check:**
--   **Broken**: The core web crawling feature is not robust and is failing on a new user-provided URL. This is a critical failure.
+-   **Broken**: The primary function of saving files to SharePoint is confirmed broken by the user.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   **Microsoft SharePoint**: For file storage, using the Microsoft Graph API. Requires User API Key (Azure Client ID, Secret, Tenant ID).
--   **Google Gemini**: For PDF classification during web crawls. Uses Emergent LLM Key.
+-   **Microsoft SharePoint**: For file storage. Requires User API Key (Azure Client ID, Secret, Tenant ID).
+-   **Google Gemini**: For PDF classification. Uses Emergent LLM Key.
 
 **Testing status**
--   **Testing agent used after significant changes**: NO
+-   **Testing agent used after significant changes**: YES
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**:  (an ad-hoc script). No formal test suite exists.
--   **Known regressions**: None.
+-   **Test files created**: None.
+-   **Known regressions**: The SharePoint upload functionality has regressed and is no longer working.
 
 **Credentials to test flow:**
-Azure credentials for SharePoint are stored in . These were provided by the user.
--   
--   
--   
+Azure credentials (, , ) and an  must be present in .
 
 **What agent forgot to execute**
--   The agent planned to reduce the UI refresh interval on the  page to 1 second for better UX but did not implement the change.
--   The weekly recrawl feature, part of the initial request, is not fully implemented. The scheduler service () is mostly a placeholder.</analysis>
+-   The implementation of the weekly recrawl scheduler feature in  remains incomplete.</analysis>
