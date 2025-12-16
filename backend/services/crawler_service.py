@@ -536,11 +536,39 @@ class CrawlerService:
                 except Exception as e:
                     logger.error(f"Error uploading PDF {pdf['filename']} to SharePoint: {str(e)}")
         
+        # Log summary
+        logger.info(f"Upload complete: {uploaded_count} uploaded, {failed_downloads} failed downloads")
+        
         # Update job with uploaded count
         await self.db.crawl_jobs.update_one(
             {"id": job_id},
             {"$set": {"total_pdfs_uploaded": uploaded_count, "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
+    
+    async def _download_with_playwright(self, url: str) -> bytes:
+        """Download a PDF using Playwright browser for sites that block direct requests"""
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
+                page = await context.new_page()
+                
+                # Navigate to the PDF URL
+                response = await page.goto(url, wait_until='networkidle', timeout=30000)
+                
+                if response and response.status == 200:
+                    content = await response.body()
+                    await browser.close()
+                    return content
+                else:
+                    logger.warning(f"Playwright download failed for {url}: status {response.status if response else 'None'}")
+                    await browser.close()
+                    return None
+        except Exception as e:
+            logger.error(f"Playwright download error for {url}: {str(e)}")
+            return None
     
     async def _update_job_status(self, job_id: str, status: str):
         """Update job status"""
