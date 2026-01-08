@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 async def quick_test():
-    base_url = "https://techdoc-spider.preview.emergentagent.com"
+    base_url = "https://github-contract-add.preview.emergentagent.com"
     
     # Test API health
     async with aiohttp.ClientSession() as session:

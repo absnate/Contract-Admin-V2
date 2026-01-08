@@ -214,7 +214,7 @@ class SharePointUploadTester:
 async def run_sharepoint_upload_test():
     """Run the main SharePoint upload test"""
     # Use external API URL from frontend/.env
-    base_url = "https://techdoc-spider.preview.emergentagent.com"
+    base_url = "https://github-contract-add.preview.emergentagent.com"
     tester = SharePointUploadTester(base_url)
     
     logger.info("=== SharePoint Upload Pipeline Test ===")
@@ -325,7 +325,7 @@ async def run_sharepoint_upload_test():
 
 async def run_alternative_test():
     """Run alternative test with American Specialties single product page if Bradley fails"""
-    base_url = "https://techdoc-spider.preview.emergentagent.com"
+    base_url = "https://github-contract-add.preview.emergentagent.com"
     tester = SharePointUploadTester(base_url)
     
     logger.info("\n=== Alternative Test: American Specialties Single Product ===")

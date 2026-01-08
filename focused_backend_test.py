@@ -8,7 +8,7 @@ import json
 import time
 import sys
 
-BASE_URL = "https://techdoc-spider.preview.emergentagent.com"
+BASE_URL = "https://github-contract-add.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 def test_api_responsiveness():
