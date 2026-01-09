@@ -539,8 +539,9 @@ PROMPT_TEMPLATES = {
     • Do NOT assume higher limits
     
     **OCIP/CCIP INTERACTION:**
-    • If OCIP/CCIP applies, GL and/or WC may be provided by the program
+    • If OCIP/CCIP is detected (using the OCIP/CCIP Detection Rule above), GL and/or WC may be provided by the program
     • Do NOT mark ABS insurance non-compliant for policies covered by OCIP/CCIP
+    • Remember: OCIP/CCIP detection applies to ALL mentions, including checklists and requirements lists
     
     **OUTPUT (EXACTLY ONE LINE - NO EXPLANATIONS):**
     `insurance_compliance` must be ONE of:
