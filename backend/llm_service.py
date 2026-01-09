@@ -1009,13 +1009,13 @@ PROMPT_TEMPLATES = {
     • Scope Review Status: Scope Not Aligned – Corrections Required
 
     ═══════════════════════════════════════════════════════════════════════════════
-    MENTAL MODEL FOR THE AGENT
+    MENTAL MODEL FOR THE AGENT (UPDATED)
     ═══════════════════════════════════════════════════════════════════════════════
 
-    "Every scope is a mini-contract.
-    Price, inclusions, exclusions, and conditions must all match.
-    If it's not written in the proposal, ABS did not price it.
-    The contract must be corrected to agree."
+    "Price must match exactly.
+    Language must not expand scope.
+    Similar is fine — broader is not.
+    If either fails, it needs to be flagged with suggested changes to the GC."
 
     ═══════════════════════════════════════════════════════════════════════════════
     OUTPUT FORMAT (JSON)
@@ -1036,6 +1036,8 @@ PROMPT_TEMPLATES = {
             "proposal_qualifications": ["..."],
             "contract_scope_language": "..." | "No contract language found",
             "contract_pricing_reference": "..." | "Not specified",
+            "price_status": "Matches exactly" | "Does not match (flagged)",
+            "language_status": "Aligned in substance" | "Conflicts with proposal" | "Requires clarification",
             "conflicts": {
               "added_scope": true | false,
               "expanded_scope": true | false,
