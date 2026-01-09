@@ -767,7 +767,12 @@ export default function App() {
                   setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
               } else {
                   // Proposal uploaded - just mark complete, no analysis
+                  // Proposals are ONLY used for Scope tab comparison
                   setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Proposal uploaded: ${file.name}` }));
+                  setMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    content: `**Proposal uploaded:** ${file.name}\n\nThis proposal is now available for scope comparison in the **Scope** tab. Upload a contract to compare scopes, or go to the Scope tab to review proposal scopes.` 
+                  }]);
               }
           }
 
