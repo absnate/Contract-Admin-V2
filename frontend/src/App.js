@@ -759,11 +759,16 @@ export default function App() {
                   body: JSON.stringify({ file_id: uploadData.file_id })
               });
 
-              // 3. Analyze
-              setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name}...` }));
-              await runAnalysis(uploadData.file_id, taskType, file.name);
-              
-              setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
+              // 3. Analyze ONLY for contracts, NOT for proposals
+              // Proposals are only used for the Scope tab comparison
+              if (documentType === "contract") {
+                  setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name}...` }));
+                  await runAnalysis(uploadData.file_id, taskType, file.name);
+                  setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
+              } else {
+                  // Proposal uploaded - just mark complete, no analysis
+                  setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Proposal uploaded: ${file.name}` }));
+              }
           }
 
       } catch (err) {
