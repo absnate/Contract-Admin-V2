@@ -760,7 +760,7 @@ export default function App() {
               });
 
               // 3. Analyze
-              setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name} with AI...` }));
+              setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name}...` }));
               await runAnalysis(uploadData.file_id, taskType, file.name);
               
               setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
