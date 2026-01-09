@@ -65,7 +65,7 @@ async def startup_db_client():
 
 # --- Models ---
 class SessionCreate(BaseModel):
-    task_type: str = "INITIAL_CONTRACT_REVIEW"
+    task_type: str = "CONTRACT_REVIEW"
 
 class ChatRequest(BaseModel):
     session_id: str
