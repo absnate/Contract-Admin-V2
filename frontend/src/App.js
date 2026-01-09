@@ -1359,7 +1359,7 @@ export default function App() {
             <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-green-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors bg-white">
                 <div className="flex flex-col items-center justify-center">
                     <Upload className="w-5 h-5 text-green-500 mb-1" />
-                    <p className="text-xs text-green-600 font-medium">Click to upload Proposal</p>
+                    <p className="text-xs text-green-600 font-medium">Upload Proposal</p>
                 </div>
                 <input type="file" className="hidden" onChange={handleProposalUpload} accept=".pdf,.docx" multiple />
             </label>
