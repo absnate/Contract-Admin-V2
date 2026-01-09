@@ -602,7 +602,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [taskType, setTaskType] = useState("INITIAL_CONTRACT_REVIEW");
+  const [taskType, setTaskType] = useState("CONTRACT_REVIEW");
   
   // Document management state - filtered by current session
   const [contracts, setContracts] = useState([]);  // Contract documents for current session
