@@ -1366,19 +1366,58 @@ export default function App() {
             <div className={`absolute inset-0 overflow-y-auto p-8 bg-white transition-opacity duration-200 ${activeTab === 'scope' ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}>
                 {analysisResult?.structured_data?.scope_data ? (
                     <div className="max-w-4xl mx-auto">
+                        <div className="flex justify-end mb-4">
+                            <Button 
+                                onClick={runScopeReview} 
+                                disabled={isLoading || !activeProposal}
+                                className="bg-green-600 hover:bg-green-700"
+                            >
+                                {isLoading ? 'Analyzing...' : 'Re-run Scope Review'}
+                            </Button>
+                        </div>
                         <ScopeView data={analysisResult.structured_data.scope_data} />
                     </div>
                 ) : (
                     <div className="flex flex-col h-full items-center justify-center text-gray-400">
                         <div className="text-center max-w-md">
-                            <div className="text-lg font-semibold mb-2">Scope Review</div>
+                            <div className="text-lg font-semibold mb-2 text-gray-700">Scope Review</div>
                             <p className="text-sm mb-4">
-                                Upload a Proposal document to begin scope review.
                                 The Proposal defines what ABS priced and serves as the authoritative baseline.
                             </p>
-                            <p className="text-xs text-gray-300">
-                                When both Proposal and Contract are uploaded, the system will compare each scope for alignment.
-                            </p>
+                            
+                            {/* Status indicators */}
+                            <div className="mb-6 space-y-2">
+                                <div className={`flex items-center justify-center gap-2 text-sm ${activeProposal ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {activeProposal ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                                    <span>Proposal: {activeProposal ? activeProposal.filename : 'Not uploaded'}</span>
+                                </div>
+                                <div className={`flex items-center justify-center gap-2 text-sm ${activeContract ? 'text-green-600' : 'text-yellow-500'}`}>
+                                    {activeContract ? <CheckCircle size={16} /> : <Clock size={16} />}
+                                    <span>Contract: {activeContract ? activeContract.filename : 'Optional - for comparison'}</span>
+                                </div>
+                            </div>
+                            
+                            {/* Run Scope Review Button */}
+                            <Button 
+                                onClick={runScopeReview} 
+                                disabled={isLoading || !activeProposal}
+                                className={`${activeProposal ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'}`}
+                            >
+                                {isLoading ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Analyzing...
+                                    </span>
+                                ) : (
+                                    'Run Scope Review'
+                                )}
+                            </Button>
+                            
+                            {!activeProposal && (
+                                <p className="text-xs text-gray-300 mt-4">
+                                    Upload a Proposal document using the "Click to upload Proposal" button in the sidebar.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
