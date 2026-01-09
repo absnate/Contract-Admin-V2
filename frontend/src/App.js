@@ -200,7 +200,7 @@ const NegotiationView = ({ data }) => {
     );
 };
 
-// Scope View Component - Proposal-driven scope comparison
+// Scope View Component - Proposal vs Contract comparison with GC-ready output
 const ScopeView = ({ data }) => {
     if (!data) return null;
 
@@ -220,26 +220,37 @@ const ScopeView = ({ data }) => {
 
     const getResultColor = (result) => {
         if (result === "Aligned") return "bg-green-100 text-green-700";
-        if (result === "Discrepancy Identified") return "bg-red-100 text-red-700";
+        if (result === "Conflict Identified" || result === "Discrepancy Identified") return "bg-red-100 text-red-700";
         return "bg-yellow-100 text-yellow-700";
     };
 
-    const getCategoryColor = (category) => {
-        const colors = {
-            "Added Scope": "bg-red-100 text-red-700",
-            "Expanded Scope": "bg-orange-100 text-orange-700",
-            "Missing Scope": "bg-purple-100 text-purple-700",
-            "Responsibility Shift": "bg-blue-100 text-blue-700",
-            "Technical Change": "bg-indigo-100 text-indigo-700",
-            "Specification Conflict": "bg-pink-100 text-pink-700"
-        };
-        return colors[category] || "bg-gray-100 text-gray-600";
+    const hasConflicts = (scope) => {
+        if (scope.conflicts) {
+            return Object.values(scope.conflicts).some(v => v === true);
+        }
+        return scope.review_result === "Conflict Identified" || scope.review_result === "Discrepancy Identified";
+    };
+
+    const getConflictTypes = (conflicts) => {
+        if (!conflicts) return [];
+        const types = [];
+        if (conflicts.added_scope) types.push("Added Scope");
+        if (conflicts.expanded_scope) types.push("Expanded Scope");
+        if (conflicts.pricing_mismatch) types.push("Pricing Mismatch");
+        if (conflicts.inclusion_conflict) types.push("Inclusion Conflict");
+        if (conflicts.exclusion_conflict) types.push("Exclusion Conflict");
+        if (conflicts.qualification_conflict) types.push("Qualification Conflict");
+        return types;
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
     };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Scope Review</h2>
+                <h2 className="text-xl font-bold text-gray-900">Scope Review – Proposal vs. Contract</h2>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(data.scope_review_status)}`}>
                     {data.scope_review_status || "Pending"}
                 </span>
@@ -251,7 +262,9 @@ const ScopeView = ({ data }) => {
                     <div>
                         <span className="text-gray-500">Review Mode:</span>
                         <span className="ml-2 font-medium text-gray-900">
-                            {data.scope_review_mode === "proposal_only" ? "Proposal Only" : "Proposal + Contract"}
+                            {data.scope_review_mode === "proposal_only" ? "Proposal Only" : 
+                             data.scope_review_mode === "proposal_and_contract" ? "Proposal + Contract Comparison" : 
+                             "Awaiting Documents"}
                         </span>
                     </div>
                     <div>
@@ -268,82 +281,142 @@ const ScopeView = ({ data }) => {
             </div>
 
             {/* Scopes List */}
-            <div className="space-y-4">
+            <div className="space-y-6">
                 {data.scopes_identified && data.scopes_identified.map((scope, idx) => (
-                    <Card key={idx} className="overflow-hidden border border-gray-200">
-                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                            <span className="font-bold text-gray-900">{idx + 1}. {scope.scope_name}</span>
+                    <Card key={idx} className={`overflow-hidden border-2 ${hasConflicts(scope) ? 'border-red-300' : 'border-gray-200'}`}>
+                        <div className={`px-4 py-3 border-b flex justify-between items-center ${hasConflicts(scope) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                            <span className="font-bold text-gray-900">Scope: {scope.scope_name}</span>
                             <span className={`px-2 py-1 rounded text-xs font-bold ${getResultColor(scope.review_result)}`}>
                                 {scope.review_result}
                             </span>
                         </div>
                         
                         <div className="p-4 space-y-4">
-                            {/* Proposal Details */}
-                            <div className="space-y-3">
+                            {/* Proposal – Priced Scope (Authoritative) */}
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <div className="text-sm font-bold text-green-800 mb-3">📋 Proposal – Priced Scope (Authoritative)</div>
+                                
+                                {/* Price */}
+                                {scope.proposal_price && (
+                                    <div className="mb-3">
+                                        <span className="text-xs text-green-600 uppercase tracking-wide font-semibold">Price: </span>
+                                        <span className="font-bold text-green-900">{scope.proposal_price}</span>
+                                    </div>
+                                )}
+                                
+                                {/* Inclusions */}
                                 {scope.proposal_inclusions && scope.proposal_inclusions.length > 0 && (
-                                    <div>
-                                        <div className="text-xs text-green-600 uppercase tracking-wide mb-1 font-semibold">Inclusions</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-green-50 p-2 rounded">
-                                            {scope.proposal_inclusions.map((item, i) => <li key={i}>{item}</li>)}
+                                    <div className="mb-3">
+                                        <div className="text-xs text-green-600 uppercase tracking-wide mb-1 font-semibold">Inclusions (Verbatim):</div>
+                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-white p-2 rounded border border-green-100">
+                                            {scope.proposal_inclusions.map((item, i) => <li key={i}>"{item}"</li>)}
                                         </ul>
                                     </div>
                                 )}
                                 
+                                {/* Exclusions */}
                                 {scope.proposal_exclusions && scope.proposal_exclusions.length > 0 && (
-                                    <div>
-                                        <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Exclusions</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-red-50 p-2 rounded">
-                                            {scope.proposal_exclusions.map((item, i) => <li key={i}>{item}</li>)}
+                                    <div className="mb-3">
+                                        <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Exclusions (Verbatim):</div>
+                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-red-50 p-2 rounded border border-red-100">
+                                            {scope.proposal_exclusions.map((item, i) => <li key={i}>"{item}"</li>)}
                                         </ul>
                                     </div>
                                 )}
                                 
+                                {/* Qualifications */}
                                 {scope.proposal_qualifications && scope.proposal_qualifications.length > 0 && (
                                     <div>
-                                        <div className="text-xs text-yellow-600 uppercase tracking-wide mb-1 font-semibold">Qualifications</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-yellow-50 p-2 rounded">
-                                            {scope.proposal_qualifications.map((item, i) => <li key={i}>{item}</li>)}
+                                        <div className="text-xs text-yellow-600 uppercase tracking-wide mb-1 font-semibold">Qualifications / Conditions:</div>
+                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-yellow-50 p-2 rounded border border-yellow-100">
+                                            {scope.proposal_qualifications.map((item, i) => <li key={i}>"{item}"</li>)}
                                         </ul>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Contract Reference */}
-                            {scope.contract_reference && (
-                                <div>
-                                    <div className="text-xs text-blue-600 uppercase tracking-wide mb-1 font-semibold">Contract Reference</div>
-                                    <div className="bg-blue-50 p-3 rounded text-sm text-gray-700 italic">
-                                        "{scope.contract_reference}"
-                                    </div>
+                            {/* Contract – Current Language */}
+                            {(scope.contract_scope_language || scope.contract_reference || scope.contract_pricing_reference) && (
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <div className="text-sm font-bold text-blue-800 mb-3">📄 Contract – Current Language</div>
+                                    
+                                    {(scope.contract_scope_language || scope.contract_reference) && (
+                                        <div className="mb-3">
+                                            <div className="text-xs text-blue-600 uppercase tracking-wide mb-1 font-semibold">Scope / Inclusion Language (Verbatim):</div>
+                                            <div className="bg-white p-2 rounded border border-blue-100 text-sm text-gray-700 italic">
+                                                "{scope.contract_scope_language || scope.contract_reference}"
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {scope.contract_pricing_reference && (
+                                        <div>
+                                            <div className="text-xs text-blue-600 uppercase tracking-wide mb-1 font-semibold">Pricing Reference:</div>
+                                            <div className="bg-white p-2 rounded border border-blue-100 text-sm text-gray-700 italic">
+                                                "{scope.contract_pricing_reference}"
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Discrepancy Details */}
-                            {scope.review_result === "Discrepancy Identified" && (
-                                <div className="border-t border-gray-200 pt-4 mt-4 space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${getCategoryColor(scope.discrepancy_category)}`}>
-                                            {scope.discrepancy_category}
-                                        </span>
-                                        {scope.abs_position && (
-                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-600 text-white">
-                                                {scope.abs_position}
+                            {/* Conflict Details */}
+                            {hasConflicts(scope) && (
+                                <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                                    <div className="text-sm font-bold text-red-800 mb-3">⚠️ Conflict Identified</div>
+                                    
+                                    {/* Conflict Type Checkboxes */}
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {scope.conflicts ? (
+                                            getConflictTypes(scope.conflicts).map((type, i) => (
+                                                <span key={i} className="px-2 py-1 rounded text-xs font-bold bg-red-200 text-red-800">
+                                                    ☑ {type}
+                                                </span>
+                                            ))
+                                        ) : scope.discrepancy_category && (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-200 text-red-800">
+                                                ☑ {scope.discrepancy_category}
                                             </span>
                                         )}
                                     </div>
                                     
-                                    {scope.issue_description && (
-                                        <div>
-                                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Issue Description</div>
-                                            <div className="text-sm text-gray-700">{scope.issue_description}</div>
+                                    {/* Explanation */}
+                                    {(scope.conflict_explanation || scope.issue_description) && (
+                                        <div className="mb-3">
+                                            <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Explanation (Plain Language):</div>
+                                            <div className="bg-white p-2 rounded border border-red-200 text-sm text-gray-700">
+                                                {scope.conflict_explanation || scope.issue_description}
+                                            </div>
                                         </div>
                                     )}
                                     
-                                    {scope.required_correction && (
-                                        <div className="bg-red-50 p-3 rounded border border-red-200">
-                                            <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Required Correction</div>
-                                            <div className="text-sm text-red-800 font-medium">{scope.required_correction}</div>
+                                    {/* ABS Position */}
+                                    {scope.abs_position && (
+                                        <div className="mb-3">
+                                            <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">ABS Position:</div>
+                                            <span className="px-3 py-1 rounded text-sm font-bold bg-red-600 text-white">
+                                                ☑ {scope.abs_position}
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    {/* GC-Ready Correction */}
+                                    {(scope.gc_ready_correction || scope.required_correction) && (
+                                        <div className="bg-white p-3 rounded border-2 border-red-300">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div className="text-xs text-red-600 uppercase tracking-wide font-semibold">
+                                                    📧 Proposed Contract Correction (GC-Ready Language)
+                                                </div>
+                                                <button 
+                                                    onClick={() => copyToClipboard(scope.gc_ready_correction || scope.required_correction)}
+                                                    className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
+                                                >
+                                                    Copy to Clipboard
+                                                </button>
+                                            </div>
+                                            <div className="text-sm text-gray-800 font-medium whitespace-pre-wrap bg-red-50 p-3 rounded border border-red-200">
+                                                {scope.gc_ready_correction || scope.required_correction}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
