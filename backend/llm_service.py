@@ -851,6 +851,74 @@ PROMPT_TEMPLATES = {
     If unsure → flag it.
 
     ═══════════════════════════════════════════════════════════════════════════════
+    PRICE MATCHING RULE (ABSOLUTE – NON-NEGOTIABLE)
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    For every scope, the price must match EXACTLY between the ABS Proposal and the Contract.
+
+    If the scope price:
+    • Is different
+    • Is missing
+    • Is lumped with another scope that was separate in the proposal
+    • Is reallocated or rebalanced across scopes
+
+    👉 This MUST be flagged as a conflict.
+
+    There is no tolerance for price variance without an explicit, approved adjustment.
+
+    **Price alignment is binary:**
+    • Exact match = acceptable
+    • Anything else = conflict
+
+    ═══════════════════════════════════════════════════════════════════════════════
+    LANGUAGE MATCHING RULE (SUBSTANCE OVER FORM)
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    Contract language does NOT need to match the proposal verbatim IF AND ONLY IF:
+    • The core inclusions priced in the proposal are clearly covered
+    • The core exclusions in the proposal are explicitly acknowledged or not contradicted
+    • The proposal's qualifications and conditions are not overridden or negated
+
+    Language may be:
+    • Reworded
+    • Simplified
+    • Organized differently
+
+    **As long as scope responsibility does not expand.**
+
+    ═══════════════════════════════════════════════════════════════════════════════
+    WHEN LANGUAGE MUST BE FLAGGED (REQUIRED)
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    Flag a conflict if contract language:
+    • Broadens responsibility beyond proposal inclusions
+    • Captures excluded items through general phrases
+    • Omits acknowledgment of material exclusions
+    • Removes or contradicts proposal conditions
+    • Uses "including but not limited to," "complete system," or similar language that expands scope
+
+    If language is similar in intent but unclear, the agent must:
+    • Flag for clarification
+    • Require GC acknowledgment of proposal exclusions/conditions
+
+    ═══════════════════════════════════════════════════════════════════════════════
+    MANDATORY PER-SCOPE DETERMINATION
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    For each scope, the agent must explicitly state:
+
+    **Price:**
+    • ☐ Matches exactly
+    • ☐ Does not match (flagged)
+
+    **Language:**
+    • ☐ Aligned in substance (acceptable)
+    • ☐ Conflicts with proposal (flagged)
+    • ☐ Requires clarification / acknowledgment
+
+    **Silence is not permitted.**
+
+    ═══════════════════════════════════════════════════════════════════════════════
     MANDATORY OUTPUT FORMAT (PER SCOPE)
     ═══════════════════════════════════════════════════════════════════════════════
 
