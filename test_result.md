@@ -101,81 +101,122 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
-## user_problem_statement: Fix crawler failing on https://americanspecialties.com/all-washroom-accessories/ and only upload product data/submittal/spec docs (no installation).
-## backend:
-##   - task: "Crawl americanspecialties.com landing page and discover product PDFs"
-##     implemented: true
-##     working: true
-##     file: "backend/services/crawler_service.py; backend/services/playwright_crawler.py; backend/services/process_runner.py; backend/server.py; backend/services/pdf_classifier.py"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##       - working: false
-##         agent: "main"
-##         comment: "Identified Cloudflare 403 challenge when fetching via aiohttp; forced Playwright on 403/CF. Installed Playwright chromium. Added URL prioritization to go deeper into /product_category/ and /product/. Added cancellation checks to Playwright crawler and moved crawl jobs to separate OS process to keep API responsive. Added upload filter to only allow Product Data/Spec/Submittal/Tech Data docs. Manual curl checks show API stays responsive during crawl; cancellation stops Playwright process tree. Full end-to-end (crawl->classify->upload) not yet verified for ASI."
-##       - working: true
-##         agent: "testing"
-##         comment: "BACKEND TESTING COMPLETED: ✓ API stays responsive during crawl (avg 0.064s response time). ✓ ASI crawl job successfully discovered 823 PDFs from americanspecialties.com/all-washroom-accessories/. ✓ Job cancellation works correctly - jobs are cancelled immediately and processes stop. ✓ Document type filtering verified on Bradley job: Installation Manuals correctly excluded from upload (2 found, 0 uploaded), expected document types present (Product Data Sheet, Specification Sheet). ✓ Technical PDF classification working (266/332 technical PDFs identified). Minor: ASI job classification process appears slow/stuck but core crawling functionality confirmed working. All critical requirements met."
-##   - task: "SharePoint upload functionality after critical fixes"
-##     implemented: true
-##     working: false
-##     file: "backend/services/sharepoint_service.py; backend/services/crawler_service.py"
-##     stuck_count: 1
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##       - working: false
-##         agent: "testing"
-##         comment: "CRITICAL ISSUE IDENTIFIED: SharePoint upload pipeline is blocked. Testing shows: ✓ Crawling works (332 PDFs found) ✓ Classification works (115+ PDFs classified despite Gemini API errors, filename fallback functional) ✓ Azure AD credentials appear valid (no immediate auth errors) ❌ Upload phase never starts - jobs remain stuck in 'classifying' status with 0 PDFs uploaded despite having classified PDFs ready for upload. The crawl->classify pipeline works but transition to upload phase is failing. Root cause investigation needed for SharePoint upload trigger logic and potential authentication issues during actual upload attempts."
-##   - task: "Active Jobs stop/cancel flow UI testing"
-##     implemented: true
-##     working: true
-##     file: "frontend/src/pages/ActiveJobs.js; frontend/src/pages/NewJob.js; frontend/src/pages/BulkUpload.js"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##       - working: "NA"
-##         agent: "testing"
-##         comment: "Starting comprehensive UI testing for Active Jobs stop/cancel flow: 1) Create new crawl job via /new-job 2) Navigate to /active-jobs and verify job appears 3) Test Stop Job functionality including success toast and job removal 4) Verify no confirm dialog blocks click 5) Verify button disabled during request 6) Test bulk upload job if possible. Testing end-to-end UI flow."
-##       - working: true
-##         agent: "testing"
-##         comment: "UI TESTING COMPLETED SUCCESSFULLY: ✓ Job creation via /new-job works perfectly ✓ Jobs appear immediately in /active-jobs list ✓ Stop Job button is clickable without any confirm dialog blocking ✓ Success toast 'Crawl job cancelled successfully' appears immediately ✓ Jobs are removed from active list within 2 seconds without manual refresh ✓ Button is not disabled initially (as expected) ✓ Bulk upload form validation works (submit disabled without file) ✓ All UI flows working as designed. The stop/cancel functionality is working perfectly with immediate feedback and job removal."
-## frontend:
-##   - task: "(No UI changes in this iteration)"
-##     implemented: false
-##     working: "NA"
-##     file: ""
-##     stuck_count: 0
-##     priority: "low"
-##     needs_retesting: false
-##     status_history:
-##       - working: "NA"
-##         agent: "main"
-##         comment: "No frontend changes; focus is backend crawler robustness + cancellation + upload filtering."
-## metadata:
-##   created_by: "main_agent"
-##   version: "1.0"
-##   test_sequence: 1
-##   run_ui: false
-  - agent: "testing"
-    message: "UI TESTING COMPLETED SUCCESSFULLY: All Active Jobs stop/cancel flow functionality verified working perfectly. ✓ Job creation works ✓ Jobs appear in active list ✓ Stop button clickable without confirm dialog ✓ Success toast appears ✓ Jobs removed from list immediately ✓ Bulk upload validation works. The UI implementation is solid and meets all requirements. Ready for main agent to summarize and finish."
-  - agent: "testing"
-    message: "Starting UI testing for Active Jobs stop/cancel flow: 1) Create new crawl job via /new-job 2) Navigate to /active-jobs and verify job appears 3) Test Stop Job functionality 4) Verify no confirm dialog blocks click 5) Verify button disabled during request 6) Test bulk upload job if possible. Testing comprehensive UI flow end-to-end."
-## test_plan:
-##   current_focus:
-##     - "SharePoint upload functionality after critical fixes"
-##   stuck_tasks:
-##     - "SharePoint upload functionality after critical fixes"
-##   test_all: false
-##   test_priority: "high_first"
-## agent_communication:
-##   - agent: "main"
-##     message: "Please run backend testing for ASI crawl: create crawl job for https://americanspecialties.com/all-washroom-accessories/, confirm PDFs are found from product pages, classifier runs, and SharePoint upload only includes Product Data / Spec / Submittal / Tech Data docs (exclude Installation). Also verify cancel stops crawl quickly and API stays responsive."
-##   - agent: "testing"
-##     message: "Backend testing COMPLETED successfully. All critical functionality verified: ✓ ASI crawl discovers 823 PDFs ✓ API responsive during crawl ✓ Job cancellation works ✓ Document filtering works (Installation Manuals excluded) ✓ Expected document types found. The crawling, cancellation, and filtering systems are working correctly. Minor issue: ASI classification process slow but doesn't affect core functionality. Ready for main agent to summarize and finish."
-##   - agent: "main"
-##     message: "CRITICAL FIXES APPLIED (Dec 16 2025): 1) Restored valid Azure AD credentials (were corrupted to 'pdfharvester-1'). SharePoint token acquisition now works. 2) Installed Playwright chromium browser v1194 (was missing, causing BrowserType.launch errors). 3) Added comprehensive logging to child process in process_runner.py so errors are now visible in supervisor logs. Please test: Create a new crawl job for a site with PDFs (e.g., americanspecialties.com), verify PDFs are found, classified and UPLOADED to SharePoint. Check the 'Test Uploads' folder in SharePoint for actual files."
-##   - agent: "testing"
-##     message: "SHAREPOINT UPLOAD TESTING COMPLETED (Dec 16 2025): ✓ API responsive and healthy ✓ Crawling works: Bradley job found 332 PDFs ✓ Classification works: 115+ PDFs classified (despite Gemini API errors, filename fallback works) ✓ Azure AD credentials appear valid (no immediate auth errors) ❌ CRITICAL ISSUE: SharePoint upload phase not starting - jobs stuck in 'classifying' status with 0 PDFs uploaded despite having classified PDFs ready. The crawl-to-classify pipeline works but upload to SharePoint is blocked. Need investigation of SharePoint upload trigger logic and potential authentication issues during actual upload attempts."
+
+user_problem_statement: "Test the Document Ingestion & Persistent Memory system for the ABS Contract Admin application"
+
+backend:
+  - task: "GET /api/documents - List all documents"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully retrieves list of documents with file_id, filename, document_type, is_active, upload_date fields. Retrieved 26-28 documents with valid structure."
+
+  - task: "POST /api/upload?document_type=contract - Upload a contract"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully uploads contract files. Response includes correct document_type: 'contract' and is_active: true. File ID generated correctly."
+
+  - task: "POST /api/upload?document_type=proposal - Upload a proposal"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully uploads proposal files. Response includes correct document_type: 'proposal' and is_active: true. File ID generated correctly."
+
+  - task: "POST /api/documents/set-active - Set document as active"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully sets document as active. Returns status: 'success' and is_active: true. Properly handles file_id and document_type parameters."
+
+  - task: "GET /api/documents/active - Get active documents"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully returns current active contract and proposal. Response structure includes 'contract' and 'proposal' keys with proper document details."
+
+  - task: "DELETE /api/documents/{file_id} - Delete a document"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Successfully deletes documents. Returns status: 'deleted' and removes document from list. Handles both MongoDB and GridFS cleanup."
+
+  - task: "Verify additive uploads behavior"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Additive uploads work correctly. When uploading contract B, it becomes active while contract A remains in list as previous. Only one contract is active at a time."
+
+  - task: "Verify proposal uploads don't affect contracts"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Proposal uploads maintain contract independence. Active contract remains unchanged when new proposals are uploaded. Document types are properly isolated."
+
+frontend:
+  # No frontend testing required for this document ingestion system test
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Document Ingestion & Persistent Memory system testing complete"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "Completed comprehensive testing of Document Ingestion & Persistent Memory system. All 8 core functionalities tested successfully: document listing, contract/proposal uploads, active document management, document deletion, additive upload behavior, and document type independence. All tests passed with 100% success rate. Backend APIs are fully functional and working as expected."
