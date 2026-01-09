@@ -941,6 +941,61 @@ export default function App() {
     }
   };
 
+  // Run Scope Review specifically - triggered from Scope tab
+  const runScopeReview = async () => {
+    if (!activeProposal) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review:** Please upload a Proposal document first. The Proposal defines what ABS priced and is required for scope review.` 
+      }]);
+      return;
+    }
+
+    setIsLoading(true);
+    setActiveTab('scope');
+    
+    try {
+      const payload = { 
+        file_id: activeProposal.file_id, 
+        task_type: "SCOPE_REVIEW" 
+      };
+
+      const res = await fetch(`${backendUrl}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Server error: ${res.status}`);
+      }
+      
+      const result = await res.json();
+      
+      // Update result view
+      setAnalysisResult(result);
+      
+      // Add message based on result
+      const scopeStatus = result?.structured_data?.scope_data?.scope_review_status || 
+                          result?.structured_data?.scope_review_status || 
+                          "Review Complete";
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review Complete**\n\nStatus: ${scopeStatus}\n\nSee the Scope tab for details.` 
+      }]);
+      
+    } catch (err) {
+      console.error("Scope review error:", err);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review Error:** ${err.message || 'Please try again.'}` 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || !sessionId) return;
     
