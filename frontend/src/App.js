@@ -1464,7 +1464,7 @@ export default function App() {
                     </div>
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">
-                        No negotiation items found. Run an Initial Contract Review first.
+                        No negotiation items found. Run a Contract Review first.
                     </div>
                 )}
             </div>
