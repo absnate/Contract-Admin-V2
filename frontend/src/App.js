@@ -869,13 +869,46 @@ export default function App() {
                   await runAnalysis(uploadData.file_id, taskType, file.name);
                   setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
               } else {
-                  // Proposal uploaded - just mark complete, no analysis
-                  // Proposals are ONLY used for Scope tab comparison
-                  setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Proposal uploaded: ${file.name}` }));
-                  setMessages(prev => [...prev, { 
-                    role: 'assistant', 
-                    content: `**Proposal uploaded:** ${file.name}\n\nThis proposal is now available for scope comparison in the **Scope** tab. Upload a contract to compare scopes, or go to the Scope tab to review proposal scopes.` 
-                  }]);
+                  // Proposal uploaded - check if contract exists and auto-run scope review
+                  if (activeContract) {
+                      // Contract exists - auto-run scope review
+                      setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Running Scope Review...` }));
+                      setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        content: `**Proposal uploaded:** ${file.name}\n\nContract detected. Automatically running Scope Review...` 
+                      }]);
+                      
+                      // Run scope review with the proposal
+                      try {
+                          const scopeRes = await fetch(`${backendUrl}/api/analyze`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ file_id: uploadData.file_id, task_type: "SCOPE_REVIEW" })
+                          });
+                          
+                          if (scopeRes.ok) {
+                              const scopeResult = await scopeRes.json();
+                              setAnalysisResult(scopeResult);
+                              setActiveTab('scope');
+                              const scopeStatus = scopeResult?.structured_data?.scope_data?.scope_review_status || "Review Complete";
+                              setMessages(prev => [...prev, { 
+                                role: 'assistant', 
+                                content: `**Scope Review Complete**\n\nStatus: ${scopeStatus}\n\nSee the Scope tab for details.` 
+                              }]);
+                          }
+                      } catch (scopeErr) {
+                          console.error("Auto scope review error:", scopeErr);
+                      }
+                      
+                      setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Scope Review Complete` }));
+                  } else {
+                      // No contract yet - just upload proposal
+                      setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Proposal uploaded: ${file.name}` }));
+                      setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        content: `**Proposal uploaded:** ${file.name}\n\nThis proposal is now available for scope comparison. Upload a contract to automatically run Scope Review, or go to the Scope tab to review proposal scopes.` 
+                      }]);
+                  }
               }
           }
 
