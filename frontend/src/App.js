@@ -1004,7 +1004,7 @@ export default function App() {
                         }`}>
                             {processingStatus.stage === 'uploading' && 'Uploading'}
                             {processingStatus.stage === 'extracting' && 'Extracting Text'}
-                            {processingStatus.stage === 'analyzing' && 'AI Analysis'}
+                            {processingStatus.stage === 'analyzing' && 'Analyzing'}
                             {processingStatus.stage === 'complete' && 'Complete'}
                             {processingStatus.stage === 'error' && 'Error'}
                         </span>
