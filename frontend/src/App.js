@@ -1138,6 +1138,26 @@ export default function App() {
             <Button variant="outline" className="w-full justify-start gap-2 mb-4" onClick={createNewSession}>
                 <MessageSquare size={16} /> New Chat
             </Button>
+
+            {/* Task Type - Moved to top */}
+            <div className="mb-4">
+                <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Task Type</div>
+                <select 
+                    className="w-full p-2 text-sm border rounded" 
+                    value={taskType} 
+                    onChange={(e) => setTaskType(e.target.value)}
+                >
+                    <option value="CONTRACT_REVIEW">Contract Review</option>
+                    <option value="SCOPE_REVIEW">Scope Review (Proposal vs Contract)</option>
+                    <option value="SCHEDULE_ANALYSIS">Schedule Extraction & Analysis</option>
+                    <option value="PROPOSAL_COMPARISON_AND_EXHIBIT">Proposal Comparison</option>
+                    <option value="PM_CONTRACT_REVIEW_SUMMARY">PM Review Summary</option>
+                    <option value="PROCORE_MAPPING">Procore Mapping</option>
+                    <option value="ACCOUNT_MANAGER_SUMMARY_EMAIL">Account Manager Email</option>
+                    <option value="NEGOTIATION_SUGGESTED_REPLY">Negotiation Reply</option>
+                    <option value="POST_EXECUTION_SUMMARY">Post-Execution Summary</option>
+                </select>
+            </div>
             
             {/* Live Processing Status Bar */}
             {(isProcessing || processingStatus.stage) && (
