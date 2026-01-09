@@ -307,7 +307,7 @@ async def run_analysis(request: AnalysisRequest):
     contract_text = ""
     
     # Build context based on task type
-    if request.task_type in ["INITIAL_CONTRACT_REVIEW", "SCHEDULE_ANALYSIS", "PM_CONTRACT_REVIEW_SUMMARY", 
+    if request.task_type in ["CONTRACT_REVIEW", "INITIAL_CONTRACT_REVIEW", "SCHEDULE_ANALYSIS", "PM_CONTRACT_REVIEW_SUMMARY", 
                               "PROCORE_MAPPING", "ACCOUNT_MANAGER_SUMMARY_EMAIL", "NEGOTIATION_SUGGESTED_REPLY",
                               "POST_EXECUTION_SUMMARY"]:
         # These tasks primarily use Contract
