@@ -71,11 +71,11 @@ PROMPT_TEMPLATES = {
     }
     """,
 
-    "INITIAL_CONTRACT_REVIEW": """
+    "CONTRACT_REVIEW": """
     **ROLE DEFINITION:**
     You are the ABS Contract Administration Agent. Your role is to administer and enforce ABS contract policy. You do NOT negotiate creatively. You strictly execute the rules below.
 
-    **TASK:** Initial Contract Review & Negotiation Summary Generation
+    **TASK:** Contract Review & Negotiation Summary Generation
     
     **INPUTS:**
     - Contract Text (PRIMARY - use for Summary tab)
