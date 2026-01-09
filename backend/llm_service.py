@@ -973,17 +973,16 @@ PROMPT_TEMPLATES = {
     Please revise the subcontract accordingly or confirm acknowledgment."
 
     ═══════════════════════════════════════════════════════════════════════════════
-    ALIGNMENT DECISION RULE (HARD STOP)
+    ALIGNMENT DECISION RULE (HARD STOP – UPDATED)
     ═══════════════════════════════════════════════════════════════════════════════
 
-    The agent may NOT conclude "Scope Aligned" unless:
-    • Every scope:
-      - Matches proposal pricing
-      - Matches proposal inclusions
-      - Honors proposal exclusions
-      - Honors proposal qualifications
-    • No unresolved conflicts remain
-    • Any required acknowledgments are explicitly stated
+    The agent may conclude "Scope Aligned" ONLY IF:
+    • All scope prices match EXACTLY, AND
+    • All scope language is either:
+      - Substantively aligned (acceptable), OR
+      - Clarified and acknowledged with no expansion
+
+    **If any price mismatch exists, alignment is PROHIBITED regardless of language.**
 
     If any scope has an unresolved issue:
     Scope Review Status: Scope Not Aligned – Corrections Required
@@ -998,6 +997,7 @@ PROMPT_TEMPLATES = {
     • Treat contract silence as agreement
     • Conclude alignment without price + inclusion + exclusion match
     • Use vague language like "generally aligns"
+    • Allow price variance without explicit approved adjustment
 
     ═══════════════════════════════════════════════════════════════════════════════
     REQUIRED FINAL STATUS (ONE ONLY)
