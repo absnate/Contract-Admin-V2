@@ -1451,7 +1451,7 @@ export default function App() {
                     </div>
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">
-                        No summary available. Run an Initial Contract Review first.
+                        No summary available. Run a Contract Review first.
                     </div>
                 )}
             </div>
