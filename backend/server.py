@@ -386,15 +386,15 @@ async def run_analysis(request: AnalysisRequest):
         # --- SCOPE REVIEW: Map result to scope_data ---
         if request.task_type == "SCOPE_REVIEW":
             structured_data = result.get("structured_data", {})
-            # Ensure scope_data is available for frontend
-            if "scope_data" not in result.get("structured_data", {}):
-                result["structured_data"]["scope_data"] = {
-                    "scope_review_mode": structured_data.get("scope_review_mode", "proposal_only" if active_proposal and not active_contract else "proposal_and_contract"),
-                    "proposal_filename": active_proposal.get("filename") if active_proposal else None,
-                    "contract_filename": active_contract.get("filename") if active_contract else None,
-                    "scopes_identified": structured_data.get("scopes_identified", []),
-                    "scope_review_status": structured_data.get("scope_review_status", "Pending – Contract Required for Comparison")
-                }
+            # The LLM returns scope data directly in structured_data, but frontend expects it nested in scope_data
+            # Always create scope_data from the structured_data fields
+            result["structured_data"]["scope_data"] = {
+                "scope_review_mode": structured_data.get("scope_review_mode", "proposal_only" if active_proposal and not active_contract else "proposal_and_contract"),
+                "proposal_filename": active_proposal.get("filename") if active_proposal else None,
+                "contract_filename": active_contract.get("filename") if active_contract else None,
+                "scopes_identified": structured_data.get("scopes_identified", []),
+                "scope_review_status": structured_data.get("scope_review_status", "Pending – Proposal Required" if not active_proposal else ("Pending – Contract Required for Comparison" if not active_contract else "Review Complete"))
+            }
         
         # --- PDF SCHEDULE EXTRACTION LOGIC ---
         schedule_file_info = {}
