@@ -291,6 +291,36 @@ const ScopeView = ({ data }) => {
                             </span>
                         </div>
                         
+                        {/* Price & Language Status Indicators */}
+                        {(scope.price_status || scope.language_status) && (
+                            <div className="px-4 py-2 bg-gray-100 border-b border-gray-200 flex flex-wrap gap-3">
+                                {scope.price_status && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Price:</span>
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                            scope.price_status.includes("Matches") ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {scope.price_status.includes("Matches") ? "☑ Matches exactly" : "☒ Does not match"}
+                                        </span>
+                                    </div>
+                                )}
+                                {scope.language_status && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Language:</span>
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                            scope.language_status.includes("Aligned") ? 'bg-green-100 text-green-700' : 
+                                            scope.language_status.includes("clarification") ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
+                                        }`}>
+                                            {scope.language_status.includes("Aligned") ? "☑ Aligned in substance" : 
+                                             scope.language_status.includes("clarification") ? "⚠ Requires clarification" :
+                                             "☒ Conflicts with proposal"}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
                         <div className="p-4 space-y-4">
                             {/* Proposal – Priced Scope (Authoritative) */}
                             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
