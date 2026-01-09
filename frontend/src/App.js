@@ -1522,7 +1522,7 @@ export default function App() {
                             
                             {!activeProposal && (
                                 <p className="text-xs text-gray-300 mt-4">
-                                    Upload a Proposal document using the "Click to upload Proposal" button in the sidebar.
+                                    Upload a Proposal document using the "Upload Proposal" button in the sidebar.
                                 </p>
                             )}
                         </div>
