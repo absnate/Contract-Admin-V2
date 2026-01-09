@@ -382,11 +382,85 @@ PROMPT_TEMPLATES = {
         - If not mentioned: "Parking: Not specified in the contract."
         - Do NOT negotiate or propose changes
     
-    14. **OCIP / CCIP Status:**
-        - "Yes - GL/WC/Both" if OCIP or CCIP applies
-        - If OCIP/CCIP applies: GL and/or WC may be provided by program - state factually
-        - "No" if clearly stated as not applicable
-        - "Not specified in the contract." if not mentioned
+    ═══════════════════════════════════════════════════════════════════════════════
+    14. **OCIP / CCIP STATUS (AUTHORITATIVE DETECTION RULE - HARD OVERRIDE)**
+    ═══════════════════════════════════════════════════════════════════════════════
+    
+    **PURPOSE:** Detect OCIP/CCIP references ANYWHERE in the contract, including checklists, onboarding requirements, exhibits, insurance forms, or "Initial Requirements" sections.
+    
+    **AUTHORITATIVE RULE:**
+    If the contract contains ANY explicit reference to OCIP or CCIP anywhere in the document (including checklists, onboarding requirements, exhibits, insurance forms, or "Initial Requirements"), then:
+    • The Summary tab must NOT state "OCIP/CCIP: Not specified in the contract."
+    • The Summary tab must mark OCIP/CCIP as SPECIFIED and report the exact type mentioned.
+    
+    ───────────────────────────────────────────────────────────────────────────────
+    DETECTION KEYWORDS (Case-Insensitive, All Variations)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    Treat ANY of the following as a POSITIVE MATCH for OCIP/CCIP being specified:
+    • OCIP
+    • Owner Controlled Insurance Program
+    • Owner-Controlled Insurance Program
+    • CCIP
+    • Contractor Controlled Insurance Program
+    • Contractor-Controlled Insurance Program
+    • Wrap-up, Wrapup, Wrap Up
+    • Project Insurance Program, PIP
+    • "Insurance OCIP as required"
+    • "Job Specific Certificate of Insurance" tied to OCIP/CCIP
+    • "OCIP Enrollment"
+    • "CCIP Enrollment"
+    • "Wrap-up Insurance"
+    • "Owner's Insurance Program"
+    • "Contractor's Insurance Program"
+    
+    ───────────────────────────────────────────────────────────────────────────────
+    OUTPUT RULE (OCIP/CCIP Status)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    • If OCIP is mentioned ANYWHERE → output: "OCIP specified"
+    • If CCIP is mentioned ANYWHERE → output: "CCIP specified"
+    • If both are mentioned → output: "OCIP/CCIP specified (both referenced)"
+    • If Wrap-up/PIP mentioned but type unclear → output: "Project Insurance Program specified (type unconfirmed)"
+    
+    **ONLY output "Not specified in the contract" if NONE of the keywords appear ANYWHERE in the entire document.**
+    
+    ───────────────────────────────────────────────────────────────────────────────
+    PROHIBITED BEHAVIOR (OCIP/CCIP - HARD BLOCKS)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    The agent must NOT:
+    • Require a formal "program description" section to treat OCIP/CCIP as specified
+    • Ignore OCIP/CCIP references in onboarding lists, required forms, or initial requirements
+    • Ignore OCIP/CCIP references in checklists or document submission requirements
+    • Ignore OCIP/CCIP references in insurance exhibits or attachments
+    • Mark "Not specified" when ANY keyword match exists
+    
+    ───────────────────────────────────────────────────────────────────────────────
+    EXAMPLE (Correct Behavior)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    **Contract Text:** "Insurance OCIP as required..."
+    **Correct Output:** `ocip_ccip_status`: "OCIP specified"
+    
+    **Contract Text:** "Initial Requirements: ... OCIP Enrollment Form..."
+    **Correct Output:** `ocip_ccip_status`: "OCIP specified"
+    
+    **Contract Text (no mention):** [No OCIP/CCIP keywords found]
+    **Correct Output:** `ocip_ccip_status`: "Not specified in the contract"
+    
+    ───────────────────────────────────────────────────────────────────────────────
+    FAILURE CONDITION (OCIP/CCIP - HARD FAILURE)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    The output is INCORRECT if:
+    • Any OCIP/CCIP keyword appears in the contract
+    • AND the Summary reports "Not specified in the contract"
+    
+    **This is a HARD FAILURE.**
+    
+    **MENTAL MODEL:** "If 'OCIP' or 'CCIP' appears anywhere, it is specified. Location does not matter. Checklists count. Requirements lists count. Everything counts."
+    ═══════════════════════════════════════════════════════════════════════════════
 
     ═══════════════════════════════════════════════════════════════════════════════
     **15. INSURANCE COMPLIANCE (AUTHORITATIVE - FINAL HARD RULES)**
