@@ -617,7 +617,7 @@ async def save_contract_review(request: SaveContractReviewRequest):
             "negotiation_summary": request.negotiation_summary,
             "scope_data": request.scope_data,
             "analysis_result": request.analysis_result,
-            "task_type": session.get("task_type") if session else "INITIAL_CONTRACT_REVIEW"
+            "task_type": session.get("task_type") if session else "CONTRACT_REVIEW"
         }
         
         # Check if review already exists for this session
