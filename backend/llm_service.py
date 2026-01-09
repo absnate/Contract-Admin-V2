@@ -1083,7 +1083,7 @@ async def analyze_contract_text(
         raise Exception("EMERGENT_LLM_KEY not set")
 
     # Select template or default
-    template = PROMPT_TEMPLATES.get(task_type, PROMPT_TEMPLATES["INITIAL_CONTRACT_REVIEW"])
+    template = PROMPT_TEMPLATES.get(task_type, PROMPT_TEMPLATES["CONTRACT_REVIEW"])
 
     # ═══════════════════════════════════════════════════════════════════════════
     # PRE-EXTRACTION: GLOBAL KEYWORD HARVEST
