@@ -230,7 +230,7 @@ const NegotiationView = ({ data }) => {
     );
 };
 
-// Scope View Component - Discrepancies Only with Section-Level Compliance
+// Scope View Component - ALL SCOPES with Section-Level Compliance
 const ScopeView = ({ data }) => {
     if (!data) return null;
 
@@ -275,10 +275,15 @@ const ScopeView = ({ data }) => {
         material: "Material"
     };
 
+    // Count stats
+    const totalScopes = data.scopes_identified?.length || 0;
+    const compliantScopes = data.scopes_identified?.filter(s => s.overall_status === "Compliant").length || 0;
+    const nonCompliantScopes = totalScopes - compliantScopes;
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Scope Review – Discrepancies Only</h2>
+                <h2 className="text-xl font-bold text-gray-900">Scope Review – All Scopes</h2>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(data.scope_review_status)}`}>
                     {data.scope_review_status || "Pending"}
                 </span>
@@ -296,8 +301,19 @@ const ScopeView = ({ data }) => {
                         </span>
                     </div>
                     <div>
+                        <span className="text-gray-500">Total Scopes:</span>
+                        <span className="ml-2 font-bold text-gray-900">{totalScopes}</span>
+                    </div>
+                    <div>
                         <span className="text-gray-500">Proposal:</span>
                         <span className="ml-2 font-medium text-green-600">{data.proposal_filename || "Uploaded"}</span>
+                    </div>
+                    <div className="flex gap-4">
+                        <span className="text-green-600 font-medium">✓ {compliantScopes} Compliant</span>
+                        {nonCompliantScopes > 0 && (
+                            <span className="text-red-600 font-medium">✗ {nonCompliantScopes} Issues</span>
+                        )}
+                    </div>
                     </div>
                     {data.contract_filename && (
                         <div className="col-span-2">
