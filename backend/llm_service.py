@@ -363,9 +363,19 @@ PROMPT_TEMPLATES = {
     8. **Substantial Completion:** From contract or schedule. If not stated: "Not specified in the contract."
     
     9. **Pay App Due Date:** 
-        - Look for payment application due dates, payment terms, pay app schedules
-        - Keywords to search: "payment", "pay app", "pay application", "due date", "payment due", "invoice", "billing"
-        - State verbatim (e.g., "Net 30 from approved pay application", "Payment due within 30 days")
+        - Look for payment application due dates, payment terms, pay app schedules, progress payment requirements
+        - **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
+          - "payment", "pay app", "pay application", "due date", "payment due"
+          - "invoice", "billing", "billing cycle"
+          - **"progress payment"**, "progress payment request", "progress payments"
+          - "monthly payment", "payment request", "application for payment"
+          - "twentieth day", "15th day", "25th day", "end of month", "by the __ day"
+        - **CRITICAL:** Search the ENTIRE contract including:
+          - Article/Section headers containing "Payment" or "Progress Payment"
+          - Subsections under Payment articles (e.g., "F. the progress payment request is required...")
+          - Schedule of Values sections
+          - Payment procedure sections
+        - State verbatim (e.g., "Progress payment request required by the twentieth day of each month", "Net 30 from approved pay application")
         - If not stated: "Not specified in the contract."
     
     10. **Retention %:** 
