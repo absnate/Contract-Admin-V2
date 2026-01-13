@@ -905,7 +905,7 @@ PROMPT_TEMPLATES = {
 
     "SCOPE_REVIEW": """
     ═══════════════════════════════════════════════════════════════════════════════
-    SYSTEM PROMPT – SCOPE REVIEW LOGIC (DISCREPANCIES ONLY)
+    SYSTEM PROMPT – SCOPE REVIEW LOGIC (ALL SCOPES - COMPLETE LISTING)
     ═══════════════════════════════════════════════════════════════════════════════
 
     APPLICABILITY
@@ -929,11 +929,55 @@ PROMPT_TEMPLATES = {
     • The Contract must be struck, modified, clarified, or corrected
 
     ═══════════════════════════════════════════════════════════════════════════════
+    CRITICAL: SCOPE IDENTIFICATION (MANDATORY - DO NOT SKIP ANY SCOPES)
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    **STEP 1: IDENTIFY ALL SCOPES FROM BOTH DOCUMENTS**
+
+    You MUST identify and list EVERY scope of work from:
+    1. The ABS Proposal (PRIMARY SOURCE)
+    2. The Contract (for comparison)
+
+    **COMMON ABS SCOPES TO LOOK FOR (non-exhaustive list):**
+    • Toilet Accessories / Washroom Accessories / Bath Accessories
+    • Toilet Compartments / Toilet Partitions / Restroom Partitions
+    • Mirrors / Framed Mirrors / Mirror Units
+    • Lockers / Metal Lockers / Plastic Lockers
+    • Bike Racks / Bicycle Racks
+    • Ski Racks / Ski Storage
+    • Fire Protection Specialties / Fire Extinguishers / Fire Extinguisher Cabinets
+    • Corner Guards / Wall Protection
+    • Visual Display Boards / Marker Boards / Tack Boards
+    • Mailboxes / Mail Delivery Equipment
+    • Signage / Room Signs / ADA Signage
+    • Flagpoles
+    • Storage Shelving
+    • Wire Mesh Partitions
+    • Entrance Mats / Floor Mats
+    • Postal Specialties
+    • Metal Shelving
+    • Any other specialty items listed in proposal
+
+    **MANDATORY BEHAVIOR:**
+    • Count the number of distinct scopes in the Proposal
+    • Count the number of distinct scopes in the Contract
+    • The output MUST include ALL scopes identified
+    • If Proposal has 6 scopes, output MUST have 6 scopes in scopes_identified array
+    • Do NOT omit any scope, even if fully compliant
+
+    **CONTRACT SCOPE COMBINING:**
+    • Contracts may combine similar scopes (e.g., "Toilet Accessories and Mirrors" as one line)
+    • This is ACCEPTABLE if:
+      - All proposal scopes are accounted for
+      - Pricing totals match
+      - No scope is missing
+    • When combined, still list each proposal scope separately and note the combining in review
+
+    ═══════════════════════════════════════════════════════════════════════════════
     REQUIRED SCOPE STRUCTURE (PER SCOPE)
     ═══════════════════════════════════════════════════════════════════════════════
 
-    For each scope identified in the Proposal, the agent must evaluate ONLY the 
-    following five sections:
+    For EVERY scope identified in the Proposal, evaluate the following five sections:
 
     1. Scope
     2. Price
@@ -941,10 +985,7 @@ PROMPT_TEMPLATES = {
     4. Exclusions
     5. Material
 
-    Each section has a specific meaning and review rule, defined below.
-
-    **Only discrepancies are reported.**
-    **Aligned sections are not listed.**
+    **ALL SCOPES MUST BE INCLUDED IN OUTPUT - COMPLIANT OR NOT**
 
     ═══════════════════════════════════════════════════════════════════════════════
     SECTION DEFINITIONS & REVIEW LOGIC
@@ -956,19 +997,22 @@ PROMPT_TEMPLATES = {
 
     **Definition:**
     The trade or work category (e.g., Toilet Accessories, Fire Protection Specialties, 
-    Toilet Compartments, Bike Racks).
+    Toilet Compartments, Bike Racks, Mirrors, Ski Racks, Lockers).
 
     **Review Rule:**
     Confirm that:
     • Each scope included in the Proposal is also included in the Contract, AND
     • The Contract does not:
-      - Add additional scopes
-      - Broaden the scope category
-      - Combine scopes that were separate in the Proposal
+      - Add additional scopes not in proposal
+      - Materially broaden the scope category
+    
+    **ACCEPTABLE:**
+    • Contract combines similar scopes (e.g., "Accessories and Mirrors" = Toilet Accessories + Mirrors)
+    • Contract uses different terminology for same scope (e.g., "Washroom Accessories" = "Toilet Accessories")
 
     **Flag if:**
-    • A proposal scope is missing from the contract
-    • The contract adds scope not listed in the proposal
+    • A proposal scope is completely missing from the contract
+    • The contract adds significant scope not listed in the proposal
     • The scope description is materially broader than the proposal
 
     ───────────────────────────────────────────────────────────────────────────────
@@ -980,15 +1024,12 @@ PROMPT_TEMPLATES = {
 
     **Review Rule:**
     • Proposal price and contract price must match exactly, with ±$1 rounding tolerance only
-    • Scope pricing must not be:
-      - Missing
-      - Lumped
-      - Reallocated
+    • If scopes are combined in contract, the TOTAL must equal the sum of proposal scopes
 
     **Flag if:**
     • Price variance exceeds ±$1
     • Scope price is missing in the contract
-    • Multiple proposal scopes are lumped into one contract value
+    • Combined pricing doesn't match proposal total
 
     ───────────────────────────────────────────────────────────────────────────────
     3. INCLUSIONS
@@ -996,10 +1037,6 @@ PROMPT_TEMPLATES = {
 
     **Definition:**
     Items listed under the specific scope's "Inclusions" section in the Proposal.
-
-    🚫 Do NOT use:
-    • High-level inclusions at the top of the proposal
-    • Global qualifications
 
     **Review Rule:**
     Confirm that:
@@ -1009,7 +1046,6 @@ PROMPT_TEMPLATES = {
     **Flag if:**
     • The contract includes items not listed in the proposal inclusions
     • Contract wording expands responsibility beyond proposal inclusions
-    • Contract implies inclusion where the proposal is silent
 
     ───────────────────────────────────────────────────────────────────────────────
     4. EXCLUSIONS
@@ -1017,10 +1053,6 @@ PROMPT_TEMPLATES = {
 
     **Definition:**
     Items listed under the specific scope's "Exclusions" section in the Proposal.
-
-    🚫 Do NOT use:
-    • Global exclusions
-    • Proposal cover-page qualifications
 
     **Review Rule:**
     Confirm that:
@@ -1030,7 +1062,6 @@ PROMPT_TEMPLATES = {
     **Flag if:**
     • The contract explicitly includes an excluded item
     • The contract uses language that negates exclusions
-    • The contract fails to acknowledge critical exclusions where scope would otherwise imply inclusion
 
     ───────────────────────────────────────────────────────────────────────────────
     5. MATERIAL
@@ -1047,11 +1078,6 @@ PROMPT_TEMPLATES = {
     **Review Rule:**
     Compare proposal product descriptions to contract requirements.
 
-    **Examples of conflicts:**
-    • Proposal: adhesive-mounted corner guards → Contract: mechanically fastened corner guards
-    • Proposal: non-fire-rated product → Contract: fire-rated requirement
-    • Proposal: specific model → Contract: upgraded or different model class
-
     **Flag if:**
     • Contract specifies different materials, methods, or performance
     • Contract upgrades or substitutes products beyond the proposal
@@ -1060,12 +1086,23 @@ PROMPT_TEMPLATES = {
     **Only flag clear conflicts.**
 
     ═══════════════════════════════════════════════════════════════════════════════
-    OUTPUT RULE – DISCREPANCIES ONLY
+    OUTPUT RULE – ALL SCOPES REQUIRED (CRITICAL CHANGE)
     ═══════════════════════════════════════════════════════════════════════════════
 
-    • Do NOT list scopes with no issues
-    • Do NOT restate full scope descriptions
-    • Do NOT summarize aligned items
+    **MANDATORY: Include ALL scopes in output, whether compliant or not.**
+
+    • Every scope from the Proposal MUST appear in scopes_identified
+    • Compliant scopes: Show with all sections marked "Compliant" and empty discrepancies
+    • Non-compliant scopes: Show with specific discrepancies listed
+
+    **Example: If Proposal has 6 scopes:**
+    scopes_identified MUST contain 6 entries:
+    1. Toilet Accessories (Compliant or Not Compliant)
+    2. Toilet Compartments (Compliant or Not Compliant)
+    3. Mirrors (Compliant or Not Compliant)
+    4. Bike Racks (Compliant or Not Compliant)
+    5. Ski Racks (Compliant or Not Compliant)
+    6. Fire Extinguisher Cabinets (Compliant or Not Compliant)
 
     ═══════════════════════════════════════════════════════════════════════════════
     COMPLIANCE COLOR & STATUS LOGIC
@@ -1076,28 +1113,27 @@ PROMPT_TEMPLATES = {
     **If compliant (no discrepancy found):**
     • Mark the section as "Compliant"
     • Status: GREEN
-    • Do not include additional narrative
+    • discrepancies array: empty []
 
     **If one or more discrepancies are found:**
     • Mark the section as "Not Compliant"
     • Status: RED
-    • List each discrepancy separately under that section
+    • List each discrepancy in the discrepancies array
 
     ───────────────────────────────────────────────────────────────────────────────
     SCOPE-LEVEL DISPLAY RULES
     ───────────────────────────────────────────────────────────────────────────────
 
-    • A scope may contain:
-      - Some Green / Compliant sections
-      - Some Red / Not Compliant sections
-    • A scope is considered **Not Compliant overall** if ANY section under that scope is Red
+    • A scope is "Compliant" overall if ALL five sections are Compliant
+    • A scope is "Not Compliant" overall if ANY section is Not Compliant
+    • ALL scopes must be displayed regardless of compliance status
 
     ───────────────────────────────────────────────────────────────────────────────
     DISCREPANCY LISTING RULE
     ───────────────────────────────────────────────────────────────────────────────
 
     When a section is Not Compliant (Red):
-    • Each discrepancy must be listed as a separate bullet or row
+    • Each discrepancy must be listed as a separate entry
     • Each discrepancy must include:
       - Proposal reference
       - Contract reference
@@ -1105,87 +1141,93 @@ PROMPT_TEMPLATES = {
       - Required action
       - GC-ready correction language
 
-    Do NOT combine multiple discrepancies into a single vague statement.
-
-    ═══════════════════════════════════════════════════════════════════════════════
-    MANDATORY OUTPUT FORMAT (PER ISSUE)
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    **Scope:** [Scope Name]
-
-    **Section:** Scope | Price | Inclusions | Exclusions | Material
-
-    **Proposal Reference (Verbatim):**
-    [Exact relevant proposal language]
-
-    **Contract Reference (Verbatim):**
-    [Exact conflicting contract language or "Not specified"]
-
-    **Issue Description:**
-    [Plain-language explanation of the discrepancy]
-
-    **Required Action:**
-    Strike | Modify | Add Clarification | Remove | Pricing Adjustment Required
-
-    **GC-Ready Correction Language:**
-    "Per the ABS proposal dated __, this scope includes/excludes __. The contract language in __ conflicts. Please revise the subcontract to match the proposal or confirm acknowledgment."
-
     ═══════════════════════════════════════════════════════════════════════════════
     FINAL STATUS RULE
     ═══════════════════════════════════════════════════════════════════════════════
 
-    • If any issue is identified:
+    • If ANY scope has ANY issue:
       **Scope Review Status: Scope Not Aligned – Corrections Required**
 
-    • If no issues are identified:
+    • If ALL scopes are fully compliant:
       **Scope Review Status: Scope Aligned**
 
     ═══════════════════════════════════════════════════════════════════════════════
     MENTAL MODEL FOR THE AGENT
     ═══════════════════════════════════════════════════════════════════════════════
 
-    "Each scope is checked section by section.
-    Only conflicts matter.
-    Proposal scope governs.
-    Silence is acceptable — contradiction is not.
-    Green means safe.
-    Red means action required.
-    One red stops alignment."
+    "First, identify EVERY scope in the proposal - count them.
+    Then, list EVERY scope in the output - same count.
+    Check each scope section by section.
+    Green means compliant - still list it.
+    Red means action required - list it with details.
+    Missing a scope from output is a FAILURE."
 
     ═══════════════════════════════════════════════════════════════════════════════
-    OUTPUT FORMAT (JSON)
+    OUTPUT FORMAT (JSON) - ALL SCOPES REQUIRED
     ═══════════════════════════════════════════════════════════════════════════════
 
     {
-      "markdown_report": "[Full report with discrepancies only]",
+      "markdown_report": "[Full report listing ALL scopes and their status]",
       "structured_data": {
         "scope_review_mode": "proposal_only" | "proposal_and_contract" | "no_proposal",
         "proposal_filename": "..." | null,
         "contract_filename": "..." | null,
+        "total_scopes_in_proposal": 6,
+        "total_scopes_in_output": 6,
         "scopes_identified": [
           {
-            "scope_name": "...",
-            "overall_status": "Compliant" | "Not Compliant",
+            "scope_name": "Toilet Accessories",
+            "proposal_price": "$X,XXX",
+            "contract_price": "$X,XXX",
+            "overall_status": "Compliant",
             "sections": {
-              "scope": { "status": "Compliant" | "Not Compliant", "discrepancies": [] },
-              "price": { "status": "Compliant" | "Not Compliant", "discrepancies": [] },
-              "inclusions": { "status": "Compliant" | "Not Compliant", "discrepancies": [] },
-              "exclusions": { "status": "Compliant" | "Not Compliant", "discrepancies": [] },
-              "material": { "status": "Compliant" | "Not Compliant", "discrepancies": [] }
+              "scope": { "status": "Compliant", "discrepancies": [] },
+              "price": { "status": "Compliant", "discrepancies": [] },
+              "inclusions": { "status": "Compliant", "discrepancies": [] },
+              "exclusions": { "status": "Compliant", "discrepancies": [] },
+              "material": { "status": "Compliant", "discrepancies": [] }
+            },
+            "discrepancies": []
+          },
+          {
+            "scope_name": "Mirrors",
+            "proposal_price": "$X,XXX",
+            "contract_price": "$X,XXX",
+            "overall_status": "Compliant",
+            "sections": {
+              "scope": { "status": "Compliant", "discrepancies": [] },
+              "price": { "status": "Compliant", "discrepancies": [] },
+              "inclusions": { "status": "Compliant", "discrepancies": [] },
+              "exclusions": { "status": "Compliant", "discrepancies": [] },
+              "material": { "status": "Compliant", "discrepancies": [] }
+            },
+            "discrepancies": []
+          },
+          {
+            "scope_name": "Toilet Compartments",
+            "proposal_price": "$X,XXX",
+            "contract_price": "$X,XXX",
+            "overall_status": "Not Compliant",
+            "sections": {
+              "scope": { "status": "Compliant", "discrepancies": [] },
+              "price": { "status": "Not Compliant", "discrepancies": ["Price mismatch"] },
+              "inclusions": { "status": "Compliant", "discrepancies": [] },
+              "exclusions": { "status": "Compliant", "discrepancies": [] },
+              "material": { "status": "Compliant", "discrepancies": [] }
             },
             "discrepancies": [
               {
-                "section": "Scope" | "Price" | "Inclusions" | "Exclusions" | "Material",
+                "section": "Price",
                 "proposal_reference": "...",
-                "contract_reference": "..." | "Not specified",
+                "contract_reference": "...",
                 "issue_description": "...",
-                "required_action": "Strike" | "Modify" | "Add Clarification" | "Remove" | "Pricing Adjustment Required",
+                "required_action": "Pricing Adjustment Required",
                 "gc_ready_correction": "..."
               }
             ]
           }
         ],
-        "scope_review_status": "Pending – Proposal Required" | "Pending – Contract Required for Comparison" | "Scope Aligned" | "Scope Not Aligned – Corrections Required"
+        "scope_review_status": "Scope Aligned" | "Scope Not Aligned – Corrections Required"
       }
     }
     """,
