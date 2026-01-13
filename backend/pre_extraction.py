@@ -27,6 +27,8 @@ CATEGORY_PRIORITY = {
     "ESCALATION": 11,
     "SCOPE_TITLES": 12,
     "PARKING": 13,
+    "AUDIT": 14,
+    "QAQC": 15,
     "DEFINITIONS": 0,  # HIGHEST PRIORITY - Definitions sections control role identification
 }
 
@@ -225,6 +227,41 @@ KEYWORD_GROUPS = {
         r"no\s*parking\s*provided", r"parking\s*by\s*others",
         r"loading\s*zone", r"loading\s*dock",
         r"staging\s*area",
+    ],
+    
+    "AUDIT": [
+        # Audit rights and provisions - critical for Terms review
+        r"\baudit\b", r"\baudits\b", r"\baudited\b", r"\bauditing\b",
+        r"audit\s*rights", r"audit\s*right", r"right\s*to\s*audit",
+        r"audit\s*provision", r"audit\s*provisions", r"audit\s*clause",
+        r"books\s*and\s*records", r"financial\s*records", r"accounting\s*records",
+        r"access\s*to\s*records", r"inspection\s*of\s*records",
+        r"cost\s*records", r"cost\s*audit", r"cost\s*audits",
+        r"lump\s*sum\s*audit", r"open\s*book", r"open-book",
+        r"audit\s*period", r"audit\s*duration", r"years?\s*after\s*completion",
+        r"certified\s*public\s*accountant", r"\bCPA\b",
+        r"examination\s*of\s*records", r"review\s*of\s*records",
+    ],
+    
+    "QAQC": [
+        # QA/QC programs and fees - critical for Terms review
+        r"\bQA/QC\b", r"\bQAQC\b", r"\bQA\s*/\s*QC\b",
+        r"quality\s*assurance", r"quality\s*control",
+        r"quality\s*assurance\s*program", r"quality\s*control\s*program",
+        r"QA\s*program", r"QC\s*program", r"QA/QC\s*program",
+        r"quality\s*program", r"quality\s*management",
+        r"third\s*party\s*inspection", r"third-party\s*inspection",
+        r"inspection\s*fee", r"inspection\s*fees",
+        r"testing\s*fee", r"testing\s*fees",
+        r"quality\s*fee", r"quality\s*fees",
+        r"QA\s*fee", r"QC\s*fee", r"QA/QC\s*fee",
+        r"fee\s*based\s*program", r"fee-based\s*program",
+        r"program\s*fee", r"program\s*fees",
+        r"inspection\s*program", r"testing\s*program",
+        r"third\s*party\s*testing", r"third-party\s*testing",
+        r"independent\s*testing", r"independent\s*inspection",
+        r"material\s*testing", r"special\s*inspection",
+        r"special\s*inspections", r"deputy\s*inspection",
     ],
 }
 

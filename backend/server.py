@@ -65,7 +65,7 @@ async def startup_db_client():
 
 # --- Models ---
 class SessionCreate(BaseModel):
-    task_type: str = "INITIAL_CONTRACT_REVIEW"
+    task_type: str = "CONTRACT_REVIEW"
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -307,7 +307,7 @@ async def run_analysis(request: AnalysisRequest):
     contract_text = ""
     
     # Build context based on task type
-    if request.task_type in ["INITIAL_CONTRACT_REVIEW", "SCHEDULE_ANALYSIS", "PM_CONTRACT_REVIEW_SUMMARY", 
+    if request.task_type in ["CONTRACT_REVIEW", "INITIAL_CONTRACT_REVIEW", "SCHEDULE_ANALYSIS", "PM_CONTRACT_REVIEW_SUMMARY", 
                               "PROCORE_MAPPING", "ACCOUNT_MANAGER_SUMMARY_EMAIL", "NEGOTIATION_SUGGESTED_REPLY",
                               "POST_EXECUTION_SUMMARY"]:
         # These tasks primarily use Contract
@@ -386,15 +386,15 @@ async def run_analysis(request: AnalysisRequest):
         # --- SCOPE REVIEW: Map result to scope_data ---
         if request.task_type == "SCOPE_REVIEW":
             structured_data = result.get("structured_data", {})
-            # Ensure scope_data is available for frontend
-            if "scope_data" not in result.get("structured_data", {}):
-                result["structured_data"]["scope_data"] = {
-                    "scope_review_mode": structured_data.get("scope_review_mode", "proposal_only" if active_proposal and not active_contract else "proposal_and_contract"),
-                    "proposal_filename": active_proposal.get("filename") if active_proposal else None,
-                    "contract_filename": active_contract.get("filename") if active_contract else None,
-                    "scopes_identified": structured_data.get("scopes_identified", []),
-                    "scope_review_status": structured_data.get("scope_review_status", "Pending – Contract Required for Comparison")
-                }
+            # The LLM returns scope data directly in structured_data, but frontend expects it nested in scope_data
+            # Always create scope_data from the structured_data fields
+            result["structured_data"]["scope_data"] = {
+                "scope_review_mode": structured_data.get("scope_review_mode", "proposal_only" if active_proposal and not active_contract else "proposal_and_contract"),
+                "proposal_filename": active_proposal.get("filename") if active_proposal else None,
+                "contract_filename": active_contract.get("filename") if active_contract else None,
+                "scopes_identified": structured_data.get("scopes_identified", []),
+                "scope_review_status": structured_data.get("scope_review_status", "Pending – Proposal Required" if not active_proposal else ("Pending – Contract Required for Comparison" if not active_contract else "Review Complete"))
+            }
         
         # --- PDF SCHEDULE EXTRACTION LOGIC ---
         schedule_file_info = {}
@@ -617,7 +617,7 @@ async def save_contract_review(request: SaveContractReviewRequest):
             "negotiation_summary": request.negotiation_summary,
             "scope_data": request.scope_data,
             "analysis_result": request.analysis_result,
-            "task_type": session.get("task_type") if session else "INITIAL_CONTRACT_REVIEW"
+            "task_type": session.get("task_type") if session else "CONTRACT_REVIEW"
         }
         
         # Check if review already exists for this session

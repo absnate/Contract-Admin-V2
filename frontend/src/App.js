@@ -65,7 +65,7 @@ const SummaryView = ({ data }) => {
         { key: "total_contract_value", label: "Total Contract Value" },
         { key: "project_start_date", label: "Start Date" },
         { key: "project_substantial_completion", label: "Substantial Completion" },
-        { key: "payment_terms", label: "Payment Terms" },
+        { key: "pay_app_due_date", label: "Pay App Due Date" },
         { key: "retention_percent", label: "Retention %" },
         { key: "prevailing_wage", label: "Prevailing Wage" },
         { key: "tax_status", label: "Tax Rate / Exempt" },
@@ -200,16 +200,16 @@ const NegotiationView = ({ data }) => {
     );
 };
 
-// Scope View Component - Proposal-driven scope comparison
+// Scope View Component - Discrepancies Only with Section-Level Compliance
 const ScopeView = ({ data }) => {
     if (!data) return null;
 
     const getStatusColor = (status) => {
         if (!status) return "bg-gray-100 text-gray-600";
-        if (status.includes("Aligned") && !status.includes("Not Aligned")) {
+        if (status === "Compliant" || (status.includes("Aligned") && !status.includes("Not Aligned"))) {
             return "bg-green-100 text-green-700";
         }
-        if (status.includes("Not Aligned") || status.includes("Corrections Required")) {
+        if (status === "Not Compliant" || status.includes("Not Aligned") || status.includes("Corrections Required")) {
             return "bg-red-100 text-red-700";
         }
         if (status.includes("Pending")) {
@@ -218,28 +218,37 @@ const ScopeView = ({ data }) => {
         return "bg-gray-100 text-gray-600";
     };
 
-    const getResultColor = (result) => {
-        if (result === "Aligned") return "bg-green-100 text-green-700";
-        if (result === "Discrepancy Identified") return "bg-red-100 text-red-700";
-        return "bg-yellow-100 text-yellow-700";
+    const getSectionStatusBg = (status) => {
+        if (status === "Compliant") return "bg-green-500";
+        if (status === "Not Compliant") return "bg-red-500";
+        return "bg-gray-400";
     };
 
-    const getCategoryColor = (category) => {
-        const colors = {
-            "Added Scope": "bg-red-100 text-red-700",
-            "Expanded Scope": "bg-orange-100 text-orange-700",
-            "Missing Scope": "bg-purple-100 text-purple-700",
-            "Responsibility Shift": "bg-blue-100 text-blue-700",
-            "Technical Change": "bg-indigo-100 text-indigo-700",
-            "Specification Conflict": "bg-pink-100 text-pink-700"
-        };
-        return colors[category] || "bg-gray-100 text-gray-600";
+    const hasIssues = (scope) => {
+        if (scope.overall_status === "Not Compliant") return true;
+        if (scope.discrepancies && scope.discrepancies.length > 0) return true;
+        if (scope.sections) {
+            return Object.values(scope.sections).some(s => s.status === "Not Compliant");
+        }
+        return false;
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+    };
+
+    const sectionLabels = {
+        scope: "Scope",
+        price: "Price",
+        inclusions: "Inclusions",
+        exclusions: "Exclusions",
+        material: "Material"
     };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Scope Review</h2>
+                <h2 className="text-xl font-bold text-gray-900">Scope Review – Discrepancies Only</h2>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(data.scope_review_status)}`}>
                     {data.scope_review_status || "Pending"}
                 </span>
@@ -251,7 +260,9 @@ const ScopeView = ({ data }) => {
                     <div>
                         <span className="text-gray-500">Review Mode:</span>
                         <span className="ml-2 font-medium text-gray-900">
-                            {data.scope_review_mode === "proposal_only" ? "Proposal Only" : "Proposal + Contract"}
+                            {data.scope_review_mode === "proposal_only" ? "Proposal Only" : 
+                             data.scope_review_mode === "proposal_and_contract" ? "Proposal + Contract Comparison" : 
+                             "Awaiting Documents"}
                         </span>
                     </div>
                     <div>
@@ -267,88 +278,130 @@ const ScopeView = ({ data }) => {
                 </div>
             </div>
 
+            {/* Legend */}
+            <div className="flex gap-4 text-xs">
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-green-500"></div>
+                    <span className="text-gray-600">Compliant</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-red-500"></div>
+                    <span className="text-gray-600">Not Compliant (Action Required)</span>
+                </div>
+            </div>
+
             {/* Scopes List */}
-            <div className="space-y-4">
+            <div className="space-y-6">
                 {data.scopes_identified && data.scopes_identified.map((scope, idx) => (
-                    <Card key={idx} className="overflow-hidden border border-gray-200">
-                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                            <span className="font-bold text-gray-900">{idx + 1}. {scope.scope_name}</span>
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${getResultColor(scope.review_result)}`}>
-                                {scope.review_result}
+                    <Card key={idx} className={`overflow-hidden border-2 ${hasIssues(scope) ? 'border-red-300' : 'border-green-300'}`}>
+                        {/* Scope Header */}
+                        <div className={`px-4 py-3 border-b flex justify-between items-center ${hasIssues(scope) ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                            <span className="font-bold text-gray-900">Scope: {scope.scope_name}</span>
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${hasIssues(scope) ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                                {scope.overall_status || (hasIssues(scope) ? "Not Compliant" : "Compliant")}
                             </span>
                         </div>
                         
-                        <div className="p-4 space-y-4">
-                            {/* Proposal Details */}
-                            <div className="space-y-3">
-                                {scope.proposal_inclusions && scope.proposal_inclusions.length > 0 && (
-                                    <div>
-                                        <div className="text-xs text-green-600 uppercase tracking-wide mb-1 font-semibold">Inclusions</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-green-50 p-2 rounded">
-                                            {scope.proposal_inclusions.map((item, i) => <li key={i}>{item}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-                                
-                                {scope.proposal_exclusions && scope.proposal_exclusions.length > 0 && (
-                                    <div>
-                                        <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Exclusions</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-red-50 p-2 rounded">
-                                            {scope.proposal_exclusions.map((item, i) => <li key={i}>{item}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-                                
-                                {scope.proposal_qualifications && scope.proposal_qualifications.length > 0 && (
-                                    <div>
-                                        <div className="text-xs text-yellow-600 uppercase tracking-wide mb-1 font-semibold">Qualifications</div>
-                                        <ul className="list-disc list-inside text-sm text-gray-700 bg-yellow-50 p-2 rounded">
-                                            {scope.proposal_qualifications.map((item, i) => <li key={i}>{item}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Contract Reference */}
-                            {scope.contract_reference && (
-                                <div>
-                                    <div className="text-xs text-blue-600 uppercase tracking-wide mb-1 font-semibold">Contract Reference</div>
-                                    <div className="bg-blue-50 p-3 rounded text-sm text-gray-700 italic">
-                                        "{scope.contract_reference}"
-                                    </div>
+                        {/* Section Status Grid */}
+                        {scope.sections && (
+                            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.entries(scope.sections).map(([key, section]) => (
+                                        <div key={key} className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
+                                            section.status === "Compliant" ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                            <div className={`w-2 h-2 rounded-full ${getSectionStatusBg(section.status)}`}></div>
+                                            {sectionLabels[key] || key}
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-
-                            {/* Discrepancy Details */}
-                            {scope.review_result === "Discrepancy Identified" && (
-                                <div className="border-t border-gray-200 pt-4 mt-4 space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${getCategoryColor(scope.discrepancy_category)}`}>
-                                            {scope.discrepancy_category}
-                                        </span>
-                                        {scope.abs_position && (
+                            </div>
+                        )}
+                        
+                        {/* Discrepancies */}
+                        {scope.discrepancies && scope.discrepancies.length > 0 && (
+                            <div className="p-4 space-y-4">
+                                <div className="text-sm font-bold text-red-700 mb-2">⚠️ Discrepancies Found ({scope.discrepancies.length})</div>
+                                
+                                {scope.discrepancies.map((disc, dIdx) => (
+                                    <div key={dIdx} className="bg-red-50 p-4 rounded-lg border border-red-200 space-y-3">
+                                        {/* Section Badge */}
+                                        <div className="flex items-center gap-2">
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-red-600 text-white">
-                                                {scope.abs_position}
+                                                {disc.section}
                                             </span>
+                                        </div>
+                                        
+                                        {/* Proposal Reference */}
+                                        {disc.proposal_reference && (
+                                            <div>
+                                                <div className="text-xs text-green-600 uppercase tracking-wide font-semibold mb-1">Proposal Reference (Verbatim):</div>
+                                                <div className="bg-green-50 p-2 rounded border border-green-200 text-sm text-gray-700 italic">
+                                                    "{disc.proposal_reference}"
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Contract Reference */}
+                                        {disc.contract_reference && (
+                                            <div>
+                                                <div className="text-xs text-blue-600 uppercase tracking-wide font-semibold mb-1">Contract Reference (Verbatim):</div>
+                                                <div className="bg-blue-50 p-2 rounded border border-blue-200 text-sm text-gray-700 italic">
+                                                    "{disc.contract_reference}"
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Issue Description */}
+                                        {disc.issue_description && (
+                                            <div>
+                                                <div className="text-xs text-red-600 uppercase tracking-wide font-semibold mb-1">Issue Description:</div>
+                                                <div className="bg-white p-2 rounded border border-red-200 text-sm text-gray-800">
+                                                    {disc.issue_description}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Required Action */}
+                                        {disc.required_action && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-500 uppercase font-semibold">Required Action:</span>
+                                                <span className="px-2 py-1 rounded text-xs font-bold bg-orange-600 text-white">
+                                                    {disc.required_action}
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* GC-Ready Correction */}
+                                        {disc.gc_ready_correction && (
+                                            <div className="bg-white p-3 rounded border-2 border-red-300">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <div className="text-xs text-red-600 uppercase tracking-wide font-semibold">
+                                                        📧 GC-Ready Correction Language
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => copyToClipboard(disc.gc_ready_correction)}
+                                                        className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
+                                                    >
+                                                        Copy to Clipboard
+                                                    </button>
+                                                </div>
+                                                <div className="text-sm text-gray-800 font-medium whitespace-pre-wrap bg-red-50 p-3 rounded border border-red-200">
+                                                    {disc.gc_ready_correction}
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    
-                                    {scope.issue_description && (
-                                        <div>
-                                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Issue Description</div>
-                                            <div className="text-sm text-gray-700">{scope.issue_description}</div>
-                                        </div>
-                                    )}
-                                    
-                                    {scope.required_correction && (
-                                        <div className="bg-red-50 p-3 rounded border border-red-200">
-                                            <div className="text-xs text-red-600 uppercase tracking-wide mb-1 font-semibold">Required Correction</div>
-                                            <div className="text-sm text-red-800 font-medium">{scope.required_correction}</div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {/* No Discrepancies - All Green */}
+                        {(!scope.discrepancies || scope.discrepancies.length === 0) && !hasIssues(scope) && (
+                            <div className="p-4 text-center text-green-700">
+                                <div className="text-sm font-medium">✓ All sections compliant - No action required</div>
+                            </div>
+                        )}
                     </Card>
                 ))}
             </div>
@@ -499,7 +552,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [taskType, setTaskType] = useState("INITIAL_CONTRACT_REVIEW");
+  const [taskType, setTaskType] = useState("CONTRACT_REVIEW");
   
   // Document management state - filtered by current session
   const [contracts, setContracts] = useState([]);  // Contract documents for current session
@@ -759,11 +812,62 @@ export default function App() {
                   body: JSON.stringify({ file_id: uploadData.file_id })
               });
 
-              // 3. Analyze
-              setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name} with AI...` }));
-              await runAnalysis(uploadData.file_id, taskType, file.name);
-              
-              setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
+              // 3. Analyze ONLY for contracts, NOT for proposals
+              // Proposals are only used for the Scope tab comparison
+              if (documentType === "contract") {
+                  setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Analyzing ${file.name}...` }));
+                  await runAnalysis(uploadData.file_id, taskType, file.name);
+                  setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Completed ${file.name}` }));
+              } else {
+                  // Proposal uploaded - check if contract exists and auto-run scope review
+                  if (activeContract) {
+                      // Contract exists - auto-run scope review
+                      setProcessingStatus(prev => ({ ...prev, stage: 'analyzing', progress: 60, message: `Running Scope Review...` }));
+                      setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        content: `**Proposal uploaded:** ${file.name}\n\nContract detected. Automatically running Scope Review...` 
+                      }]);
+                      
+                      // Run scope review with the proposal
+                      try {
+                          const scopeRes = await fetch(`${backendUrl}/api/analyze`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ file_id: uploadData.file_id, task_type: "SCOPE_REVIEW" })
+                          });
+                          
+                          if (scopeRes.ok) {
+                              const scopeResult = await scopeRes.json();
+                              // MERGE scope data with existing analysis result - DO NOT replace summary/terms
+                              setAnalysisResult(prev => ({
+                                  ...prev,
+                                  structured_data: {
+                                      ...prev?.structured_data,
+                                      scope_data: scopeResult?.structured_data?.scope_data || scopeResult?.structured_data
+                                  }
+                              }));
+                              setActiveTab('scope');
+                              const scopeStatus = scopeResult?.structured_data?.scope_data?.scope_review_status || 
+                                                  scopeResult?.structured_data?.scope_review_status || "Review Complete";
+                              setMessages(prev => [...prev, { 
+                                role: 'assistant', 
+                                content: `**Scope Review Complete**\n\nStatus: ${scopeStatus}\n\nSee the Scope tab for details.` 
+                              }]);
+                          }
+                      } catch (scopeErr) {
+                          console.error("Auto scope review error:", scopeErr);
+                      }
+                      
+                      setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Scope Review Complete` }));
+                  } else {
+                      // No contract yet - just upload proposal
+                      setProcessingStatus(prev => ({ ...prev, stage: 'complete', progress: 100, message: `Proposal uploaded: ${file.name}` }));
+                      setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        content: `**Proposal uploaded:** ${file.name}\n\nThis proposal is now available for scope comparison. Upload a contract to automatically run Scope Review, or go to the Scope tab to review proposal scopes.` 
+                      }]);
+                  }
+              }
           }
 
       } catch (err) {
@@ -931,6 +1035,67 @@ export default function App() {
     }
   };
 
+  // Run Scope Review specifically - triggered from Scope tab
+  const runScopeReview = async () => {
+    if (!activeProposal) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review:** Please upload a Proposal document first. The Proposal defines what ABS priced and is required for scope review.` 
+      }]);
+      return;
+    }
+
+    setIsLoading(true);
+    setActiveTab('scope');
+    
+    try {
+      const payload = { 
+        file_id: activeProposal.file_id, 
+        task_type: "SCOPE_REVIEW" 
+      };
+
+      const res = await fetch(`${backendUrl}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Server error: ${res.status}`);
+      }
+      
+      const result = await res.json();
+      
+      // MERGE scope data with existing analysis result - DO NOT replace summary/terms
+      setAnalysisResult(prev => ({
+          ...prev,
+          structured_data: {
+              ...prev?.structured_data,
+              scope_data: result?.structured_data?.scope_data || result?.structured_data
+          }
+      }));
+      
+      // Add message based on result
+      const scopeStatus = result?.structured_data?.scope_data?.scope_review_status || 
+                          result?.structured_data?.scope_review_status || 
+                          "Review Complete";
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review Complete**\n\nStatus: ${scopeStatus}\n\nSee the Scope tab for details.` 
+      }]);
+      
+    } catch (err) {
+      console.error("Scope review error:", err);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `**Scope Review Error:** ${err.message || 'Please try again.'}` 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || !sessionId) return;
     
@@ -970,6 +1135,26 @@ export default function App() {
             <Button variant="outline" className="w-full justify-start gap-2 mb-4" onClick={createNewSession}>
                 <MessageSquare size={16} /> New Chat
             </Button>
+
+            {/* Task Type - Moved to top */}
+            <div className="mb-4">
+                <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Task Type</div>
+                <select 
+                    className="w-full p-2 text-sm border rounded" 
+                    value={taskType} 
+                    onChange={(e) => setTaskType(e.target.value)}
+                >
+                    <option value="CONTRACT_REVIEW">Contract Review</option>
+                    <option value="SCOPE_REVIEW">Scope Review (Proposal vs Contract)</option>
+                    <option value="SCHEDULE_ANALYSIS">Schedule Extraction & Analysis</option>
+                    <option value="PROPOSAL_COMPARISON_AND_EXHIBIT">Proposal Comparison</option>
+                    <option value="PM_CONTRACT_REVIEW_SUMMARY">PM Review Summary</option>
+                    <option value="PROCORE_MAPPING">Procore Mapping</option>
+                    <option value="ACCOUNT_MANAGER_SUMMARY_EMAIL">Account Manager Email</option>
+                    <option value="NEGOTIATION_SUGGESTED_REPLY">Negotiation Reply</option>
+                    <option value="POST_EXECUTION_SUMMARY">Post-Execution Summary</option>
+                </select>
+            </div>
             
             {/* Live Processing Status Bar */}
             {(isProcessing || processingStatus.stage) && (
@@ -1004,7 +1189,7 @@ export default function App() {
                         }`}>
                             {processingStatus.stage === 'uploading' && 'Uploading'}
                             {processingStatus.stage === 'extracting' && 'Extracting Text'}
-                            {processingStatus.stage === 'analyzing' && 'AI Analysis'}
+                            {processingStatus.stage === 'analyzing' && 'Analyzing'}
                             {processingStatus.stage === 'complete' && 'Complete'}
                             {processingStatus.stage === 'error' && 'Error'}
                         </span>
@@ -1154,22 +1339,6 @@ export default function App() {
                 </div>
             </div>
 
-            <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Task Type</div>
-            <select 
-                className="w-full p-2 text-sm border rounded mb-4" 
-                value={taskType} 
-                onChange={(e) => setTaskType(e.target.value)}
-            >
-                <option value="INITIAL_CONTRACT_REVIEW">Initial Contract Review</option>
-                <option value="SCOPE_REVIEW">Scope Review (Proposal vs Contract)</option>
-                <option value="SCHEDULE_ANALYSIS">Schedule Extraction & Analysis</option>
-                <option value="PROPOSAL_COMPARISON_AND_EXHIBIT">Proposal Comparison</option>
-                <option value="PM_CONTRACT_REVIEW_SUMMARY">PM Review Summary</option>
-                <option value="PROCORE_MAPPING">Procore Mapping</option>
-                <option value="ACCOUNT_MANAGER_SUMMARY_EMAIL">Account Manager Email</option>
-                <option value="NEGOTIATION_SUGGESTED_REPLY">Negotiation Reply</option>
-                <option value="POST_EXECUTION_SUMMARY">Post-Execution Summary</option>
-            </select>
         </div>
 
         {/* Upload Zones at bottom of sidebar */}
@@ -1187,7 +1356,7 @@ export default function App() {
             <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-green-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors bg-white">
                 <div className="flex flex-col items-center justify-center">
                     <Upload className="w-5 h-5 text-green-500 mb-1" />
-                    <p className="text-xs text-green-600 font-medium">Click to upload Proposal</p>
+                    <p className="text-xs text-green-600 font-medium">Upload Proposal</p>
                 </div>
                 <input type="file" className="hidden" onChange={handleProposalUpload} accept=".pdf,.docx" multiple />
             </label>
@@ -1221,87 +1390,6 @@ export default function App() {
                 />
             </div>
         </header>
-
-        {/* Floating Processing Status Bar */}
-        {(isProcessing || (processingStatus.stage && processingStatus.stage !== '')) && (
-            <div className={`mx-4 mt-2 p-3 rounded-lg shadow-lg border transition-all duration-300 ${
-                processingStatus.stage === 'error' 
-                    ? 'bg-red-50 border-red-300' 
-                    : processingStatus.stage === 'complete'
-                    ? 'bg-green-50 border-green-300'
-                    : 'bg-white border-blue-300'
-            }`}>
-                <div className="flex items-center justify-between gap-4">
-                    {/* Left side - Status info */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Animated icon */}
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                            processingStatus.stage === 'error' ? 'bg-red-100' :
-                            processingStatus.stage === 'complete' ? 'bg-green-100' :
-                            'bg-blue-100 animate-pulse-glow'
-                        }`}>
-                            {processingStatus.stage === 'uploading' && (
-                                <Upload size={16} className="text-blue-600 animate-bounce" />
-                            )}
-                            {processingStatus.stage === 'extracting' && (
-                                <FileText size={16} className="text-blue-600 animate-pulse" />
-                            )}
-                            {processingStatus.stage === 'analyzing' && (
-                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                            )}
-                            {processingStatus.stage === 'complete' && (
-                                <CheckCircle size={16} className="text-green-600" />
-                            )}
-                            {processingStatus.stage === 'error' && (
-                                <AlertTriangle size={16} className="text-red-600" />
-                            )}
-                        </div>
-                        
-                        {/* Status text */}
-                        <div className="min-w-0 flex-1">
-                            <div className={`text-sm font-semibold ${
-                                processingStatus.stage === 'error' ? 'text-red-700' :
-                                processingStatus.stage === 'complete' ? 'text-green-700' :
-                                'text-blue-700'
-                            }`}>
-                                {processingStatus.message}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate">
-                                {processingStatus.filename}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Right side - Progress */}
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                        {processingStats.total > 1 && (
-                            <span className="text-xs text-gray-500">
-                                {processingStats.completed + 1}/{processingStats.total}
-                            </span>
-                        )}
-                        <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div 
-                                className={`h-2 rounded-full transition-all duration-300 ${
-                                    processingStatus.stage === 'error' 
-                                        ? 'bg-red-500' 
-                                        : processingStatus.stage === 'complete'
-                                        ? 'bg-green-500'
-                                        : 'bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500 bg-[length:200%_100%] animate-shimmer'
-                                }`}
-                                style={{ width: `${processingStatus.progress}%` }}
-                            ></div>
-                        </div>
-                        <span className={`text-sm font-bold min-w-[40px] text-right ${
-                            processingStatus.stage === 'error' ? 'text-red-600' :
-                            processingStatus.stage === 'complete' ? 'text-green-600' :
-                            'text-blue-600'
-                        }`}>
-                            {processingStatus.progress}%
-                        </span>
-                    </div>
-                </div>
-            </div>
-        )}
 
         {/* Workspace */}
         <div className="flex-1 overflow-hidden relative">
@@ -1360,7 +1448,7 @@ export default function App() {
                     </div>
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">
-                        No summary available. Run an Initial Contract Review first.
+                        No summary available. Run a Contract Review first.
                     </div>
                 )}
             </div>
@@ -1373,7 +1461,7 @@ export default function App() {
                     </div>
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">
-                        No negotiation items found. Run an Initial Contract Review first.
+                        No negotiation items found. Run a Contract Review first.
                     </div>
                 )}
             </div>
@@ -1382,19 +1470,58 @@ export default function App() {
             <div className={`absolute inset-0 overflow-y-auto p-8 bg-white transition-opacity duration-200 ${activeTab === 'scope' ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}>
                 {analysisResult?.structured_data?.scope_data ? (
                     <div className="max-w-4xl mx-auto">
+                        <div className="flex justify-end mb-4">
+                            <Button 
+                                onClick={runScopeReview} 
+                                disabled={isLoading || !activeProposal}
+                                className="bg-green-600 hover:bg-green-700"
+                            >
+                                {isLoading ? 'Analyzing...' : 'Re-run Scope Review'}
+                            </Button>
+                        </div>
                         <ScopeView data={analysisResult.structured_data.scope_data} />
                     </div>
                 ) : (
                     <div className="flex flex-col h-full items-center justify-center text-gray-400">
                         <div className="text-center max-w-md">
-                            <div className="text-lg font-semibold mb-2">Scope Review</div>
+                            <div className="text-lg font-semibold mb-2 text-gray-700">Scope Review</div>
                             <p className="text-sm mb-4">
-                                Upload a Proposal document to begin scope review.
                                 The Proposal defines what ABS priced and serves as the authoritative baseline.
                             </p>
-                            <p className="text-xs text-gray-300">
-                                When both Proposal and Contract are uploaded, the system will compare each scope for alignment.
-                            </p>
+                            
+                            {/* Status indicators */}
+                            <div className="mb-6 space-y-2">
+                                <div className={`flex items-center justify-center gap-2 text-sm ${activeProposal ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {activeProposal ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                                    <span>Proposal: {activeProposal ? activeProposal.filename : 'Not uploaded'}</span>
+                                </div>
+                                <div className={`flex items-center justify-center gap-2 text-sm ${activeContract ? 'text-green-600' : 'text-yellow-500'}`}>
+                                    {activeContract ? <CheckCircle size={16} /> : <Clock size={16} />}
+                                    <span>Contract: {activeContract ? activeContract.filename : 'Optional - for comparison'}</span>
+                                </div>
+                            </div>
+                            
+                            {/* Run Scope Review Button */}
+                            <Button 
+                                onClick={runScopeReview} 
+                                disabled={isLoading || !activeProposal}
+                                className={`${activeProposal ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'}`}
+                            >
+                                {isLoading ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Analyzing...
+                                    </span>
+                                ) : (
+                                    'Run Scope Review'
+                                )}
+                            </Button>
+                            
+                            {!activeProposal && (
+                                <p className="text-xs text-gray-300 mt-4">
+                                    Upload a Proposal document using the "Upload Proposal" button in the sidebar.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
