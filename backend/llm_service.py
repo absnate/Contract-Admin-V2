@@ -880,19 +880,24 @@ PROMPT_TEMPLATES = {
         - Response: "Contract insurance limits appear inconsistent (e.g. Body vs Exhibit). Please confirm governing requirement."
         - Reasoning: "Conflicting insurance terms create ambiguity regarding compliance obligations."
 
-    24. **QA/QC Fee-Based Program**
-        - **DETECTION KEYWORDS:** "QA/QC", "QAQC", "quality assurance program", "quality control program", "QA program", "QC program", "inspection fee", "testing fee", "quality fee", "fee based program", "fee-based program", "third party inspection", "third-party inspection"
-        - IF QA/QC fee-based program or inspection/testing fees are required THEN Action: ACKNOWLEDGE
-        - Response: "Please confirm the QA/QC program requirements and any associated fees. ABS will comply with quality assurance requirements but requests clarification on fee structure, payment responsibility, and inspection scheduling procedures."
-        - Reasoning: "Fee-based QA/QC programs can represent significant additional cost and administrative burden. Clear understanding of requirements, fees, and procedures is essential before execution."
-        - IF fees are stated or percentage-based THEN Action: MODIFY
-        - Response: "ABS requests that any QA/QC inspection or testing fees be paid directly by the GC/Owner or deducted from progress payments rather than requiring upfront payment. Please confirm."
-        - Reasoning: "Passing inspection fees through to subcontractors without clear billing procedures creates cash flow issues and administrative complexity."
+    24. **QA/QC Fee-Based Program (MANDATORY IF DETECTED)**
+        - **THIS IS A MANDATORY ITEM** - If any QA/QC language is detected in the contract, this MUST be included in negotiation_summary
+        - **DETECTION KEYWORDS:** "QA/QC", "QAQC", "QA-QC", "quality assurance program", "quality control program", "QA program", "QC program", "inspection fee", "testing fee", "quality fee", "fee based program", "fee-based program", "third party inspection", "third-party inspection", "quality management", "quality plan", "inspection program", "inspection and testing", "testing program"
+        - **a) Fee-Based Program Detected:**
+          - IF QA/QC fee-based program or inspection/testing fees are required THEN Action: MODIFY
+          - Response: "ABS requests that any QA/QC inspection or testing fees be paid directly by the GC/Owner or deducted from progress payments rather than requiring upfront payment. Please confirm the fee structure, payment responsibility, and inspection scheduling procedures."
+          - Reasoning: "Fee-based QA/QC programs can represent significant additional cost and administrative burden. Passing inspection fees through to subcontractors without clear billing procedures creates cash flow issues and administrative complexity."
+        - **b) Non-Fee QA/QC Program Detected:**
+          - IF QA/QC program detected but no fees mentioned THEN Action: ACKNOWLEDGE
+          - Response: "Please confirm the QA/QC program requirements. ABS will comply with quality assurance requirements but requests clarification on inspection scheduling procedures."
+          - Reasoning: "Clear understanding of QA/QC requirements and procedures is essential before execution."
+        - **MANDATORY BEHAVIOR:** If ANY QA/QC keyword is found, this item MUST appear in negotiation_summary with appropriate action (MODIFY for fee-based, ACKNOWLEDGE for non-fee)
 
     **INSTRUCTIONS:**
-    1. **SUMMARY TAB:** Extract all required fields. Apply Insurance Logic (Rule 15) carefully - ignore internal contract conflicts for compliance status unless ABS limits are exceeded.
+    1. **SUMMARY TAB:** Extract all required fields including `audit_clause` and `qaqc_program`. Apply Insurance Logic (Rule 15) carefully - ignore internal contract conflicts for compliance status unless ABS limits are exceeded.
     2. **NEGOTIATION TAB:** Iterate through Rules 1-24.
        - **MANDATORY RULES (Always Include):** 1, 9, 10, 14, 16, 19, 20, 22.
+       - **MANDATORY IF DETECTED:** 4 (Audit Rights), 24 (QA/QC Program) - These MUST be included if their keywords are found.
        - **CONDITIONAL RULES:** Check triggers. When in doubt, INCLUDE.
        - **DATA MAPPING:** Use verbatim Rule Title (e.g. "Prime Agreement"), Response, and Reasoning.
     3. If contract is silent on a mandatory item, set `verbatim_text` to "Not addressed in contract."
