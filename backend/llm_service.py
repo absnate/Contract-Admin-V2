@@ -926,12 +926,50 @@ PROMPT_TEMPLATES = {
 
     **INSTRUCTIONS:**
     1. **SUMMARY TAB:** Extract all required fields including `audit_clause` and `qaqc_program`. Apply Insurance Logic (Rule 15) carefully - ignore internal contract conflicts for compliance status unless ABS limits are exceeded.
-    2. **NEGOTIATION TAB:** Iterate through Rules 1-24.
-       - **MANDATORY RULES (Always Include):** 1, 9, 10, 14, 16, 19, 20, 22.
-       - **MANDATORY IF DETECTED:** 4 (Audit Rights), 24 (QA/QC Program) - These MUST be included if their keywords are found.
-       - **CONDITIONAL RULES:** Check triggers. When in doubt, INCLUDE.
-       - **DATA MAPPING:** Use verbatim Rule Title (e.g. "Prime Agreement"), Response, and Reasoning.
-    3. If contract is silent on a mandatory item, set `verbatim_text` to "Not addressed in contract."
+    
+    2. **NEGOTIATION TAB (TERMS) - CRITICAL INSTRUCTIONS:**
+       You MUST iterate through ALL 24 Rules and evaluate each one against the contract text.
+       
+       **MANDATORY RULES (ALWAYS INCLUDE REGARDLESS OF CONTRACT CONTENT):**
+       - Rule 1: Prime Agreement
+       - Rule 9: Material Escalation
+       - Rule 10: Offsite Storage
+       - Rule 14: Submittals
+       - Rule 16: Elevator Access
+       - Rule 19: Deposits
+       - Rule 20: New Client Retainer
+       - Rule 21: Exclusions & Qualifications
+       - Rule 22: Post-Award Deliverables
+       
+       **CONDITIONAL RULES (INCLUDE IF TRIGGER CONDITION IS MET):**
+       - Rule 2: Project Contacts - IF PM/Superintendent/PE contacts missing
+       - Rule 3: Joint Check - IF joint check clause exists → STRIKE
+       - Rule 4: Audit Rights - IF any audit language detected → STRIKE or MODIFY (MANDATORY IF DETECTED)
+       - Rule 5: Meetings - IF meetings required → MODIFY
+       - Rule 6: Tax Exemption - IF tax exempt and certificate not provided → ACKNOWLEDGE
+       - Rule 7: Bond - IF bond required or not required → ACKNOWLEDGE
+       - Rule 8: Liquidated Damages - IF LDs included → MODIFY
+       - Rule 11: Prevailing Wage - IF prevailing wage applies and docs missing → ACKNOWLEDGE
+       - Rule 12: Retention - ONLY IF retention > 5% → MODIFY
+       - Rule 13: SOV Breakouts - IF excessive SOV detail required → MODIFY
+       - Rule 15: Composite/Daily Cleanup - IF cleanup crew required → STRIKE
+       - Rule 17: Professional Insurance - IF professional insurance required → STRIKE
+       - Rule 18: General Conditions Billing - IF GC/start-up costs in proposal → ACKNOWLEDGE
+       - Rule 23: Insurance Inconsistencies - IF limits inconsistent → ACKNOWLEDGE
+       - Rule 24: QA/QC Fee-Based Program - IF QA/QC detected → MODIFY or ACKNOWLEDGE (MANDATORY IF DETECTED)
+       
+       **EVALUATION PROCESS:**
+       For EACH rule:
+       a) Search the contract text for the trigger keywords
+       b) If trigger condition is met OR rule is mandatory → INCLUDE in negotiation_summary
+       c) Use the exact Title, Response, and Reasoning from the rule definition
+       d) Set clause_reference to the section where the clause was found (or "General" if mandatory)
+       e) Set verbatim_text to the relevant contract language (or "Not addressed in contract" if silent)
+       
+       **WHEN IN DOUBT, INCLUDE THE RULE.**
+       
+    3. **DATA MAPPING:** Use verbatim Rule Title (e.g. "Prime Agreement"), Response, and Reasoning.
+    4. If contract is silent on a mandatory item, set `verbatim_text` to "Not addressed in contract."
     """,
 
     "SCOPE_REVIEW": """
