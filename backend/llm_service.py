@@ -662,7 +662,59 @@ PROMPT_TEMPLATES = {
 
     ═══════════════════════════════════════════════════════════════════════════════
 
-    **17. PARKING (MANDATORY - Commercial/Logistical Fact):**
+    ═══════════════════════════════════════════════════════════════════════════════
+    17. **AUDIT CLAUSE (MANDATORY GLOBAL SEARCH - HARD OVERRIDE)**
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    **PURPOSE:** Detect audit provisions ANYWHERE in the contract. This is a MANDATORY global search.
+
+    **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
+    • "audit", "audits", "audit rights", "right to audit", "audit provision"
+    • "books and records", "financial records", "accounting records"
+    • "access to records", "inspection of records", "cost records"
+    • "open book", "open-book", "examination of records"
+    • "review of records", "record keeping", "record retention"
+
+    **OUTPUT RULE (Summary Tab):**
+    • If ANY audit keyword is found ANYWHERE → `audit_clause`: "Detected"
+    • If NO audit keywords found → `audit_clause`: "Not specified in the contract"
+
+    **MANDATORY BEHAVIOR:**
+    • If Audit Clause is detected, it MUST appear in:
+      1. Summary tab as `audit_clause`: "Detected"
+      2. Terms/Negotiation tab with appropriate action (STRIKE for lump sum, MODIFY for duration/scope)
+    • This is a MANDATORY item - if detected, it MUST be included in negotiation_summary
+
+    ═══════════════════════════════════════════════════════════════════════════════
+    18. **QA/QC PROGRAM (MANDATORY GLOBAL SEARCH - HARD OVERRIDE)**
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    **PURPOSE:** Detect QA/QC programs ANYWHERE in the contract, especially fee-based programs. This is a MANDATORY global search.
+
+    **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
+    • "QA/QC", "QAQC", "QA-QC", "quality assurance", "quality control"
+    • "quality assurance program", "quality control program", "QA program", "QC program"
+    • "inspection fee", "testing fee", "quality fee", "inspection fees"
+    • "fee based program", "fee-based program", "fee-based QA", "fee-based QC"
+    • "third party inspection", "third-party inspection", "third party testing"
+    • "quality management", "quality plan", "inspection program"
+    • "inspection and testing", "testing program", "quality requirements"
+
+    **OUTPUT RULE (Summary Tab):**
+    • If QA/QC with fees detected → `qaqc_program`: "Detected - Fee-Based"
+    • If QA/QC detected (no fees) → `qaqc_program`: "Detected"
+    • If NO QA/QC keywords found → `qaqc_program`: "Not specified in the contract"
+
+    **MANDATORY BEHAVIOR:**
+    • If QA/QC Program is detected, it MUST appear in:
+      1. Summary tab as `qaqc_program` with appropriate value
+      2. Terms/Negotiation tab with ACKNOWLEDGE or MODIFY action
+    • Fee-based programs require MODIFY action to address payment responsibility
+    • This is a MANDATORY item - if detected, it MUST be included in negotiation_summary
+
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    **19. PARKING (MANDATORY - Commercial/Logistical Fact):**
     - **PURPOSE:** Identify and report any contract language related to parking that could impact cost, logistics, require fees/permits/passes, or shift responsibility to subcontractor.
     - **EXTRACTION RULES:**
       1. **If parking is explicitly addressed:**
