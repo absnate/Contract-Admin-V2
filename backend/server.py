@@ -131,11 +131,13 @@ async def upload_file(file: UploadFile = File(...), document_type: str = "contra
         else:
             text = "Unsupported file type for text extraction."
 
-        # 4. Mark previous active document of same type AND same session as "previous"
-        query = {"document_type": document_type, "is_active": True}
-        if session_id:
-            query["session_id"] = session_id
-        await db.documents.update_many(query, {"$set": {"is_active": False}})
+        # 4. Mark ALL previous active documents of same type as "previous"
+        # IMPORTANT: Always deactivate ALL active documents of this type globally first
+        # Then only the newly uploaded document will be active
+        await db.documents.update_many(
+            {"document_type": document_type, "is_active": True}, 
+            {"$set": {"is_active": False}}
+        )
 
         # 5. Save Metadata to 'documents' collection with document type and active status
         file_doc = {
