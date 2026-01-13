@@ -757,9 +757,10 @@ PROMPT_TEMPLATES = {
          - IF no Joint Check clause exists THEN Action: NONE (Do not list)
          - Reasoning: "Absent a joint check provision, no clarification is required."
 
-    4. **Audit Rights**
-       - **DETECTION KEYWORDS:** "audit", "audits", "audit rights", "right to audit", "audit provision", "books and records", "financial records", "accounting records", "access to records", "inspection of records", "cost records", "open book", "open-book", "examination of records"
-       - **a) Lump Sum Audits**
+    4. **Audit Rights (MANDATORY IF DETECTED)**
+       - **THIS IS A MANDATORY ITEM** - If any audit language is detected in the contract, this MUST be included in negotiation_summary
+       - **DETECTION KEYWORDS:** "audit", "audits", "audit rights", "right to audit", "audit provision", "books and records", "financial records", "accounting records", "access to records", "inspection of records", "cost records", "open book", "open-book", "examination of records", "review of records", "record keeping"
+       - **a) Lump Sum Audits (Default for ABS work)**
          - IF audits apply to lump sum base contract THEN Action: STRIKE
          - Response: "Please strike the audit provision as it applies to the lump sum base contract."
          - Reasoning: "Audits on lump sum work shift risk after the fact and undermine the certainty the pricing model is intended to provide. ABS performs lump sum work and bears all estimation risk, and post-completion audits create an imbalance not reflective of our contract structure."
@@ -767,6 +768,7 @@ PROMPT_TEMPLATES = {
          - IF audits exceed 1 year or apply beyond COs THEN Action: MODIFY
          - Response: "ABS is agreeable to audit rights limited to change orders only, for a maximum period of one (1) year following final payment."
          - Reasoning: "Audit rights should be narrowly tailored to variable work and time-limited to prevent open-ended exposure."
+       - **MANDATORY BEHAVIOR:** If ANY audit keyword is found, this item MUST appear in negotiation_summary with appropriate action (STRIKE or MODIFY)
 
     5. **Meetings**
        - IF meetings required THEN Action: MODIFY
