@@ -314,7 +314,6 @@ const ScopeView = ({ data }) => {
                             <span className="text-red-600 font-medium">✗ {nonCompliantScopes} Issues</span>
                         )}
                     </div>
-                    </div>
                     {data.contract_filename && (
                         <div className="col-span-2">
                             <span className="text-gray-500">Contract:</span>
