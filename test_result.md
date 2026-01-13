@@ -97,6 +97,82 @@
 #====================================================================================================
 
 
+#====================================================================================================
+# Testing Data - Main Agent and testing sub agent both should log testing data below this section
+#====================================================================================================
+## user_problem_statement: ABS Contract Admin Agent - A chat-based assistant for construction contract administration (ABS-focused). Supports Contract Review, Scope Review, Schedule Analysis, and other task types with structured outputs.
+## backend:
+##   - task: "Core API endpoints (health, upload, sessions, analyze)"
+##     implemented: true
+##     working: true
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##       - working: true
+##         agent: "main"
+##         comment: "Rebuilt from GitHub repo. Backend health check passing. All core endpoints implemented."
+##   - task: "LLM Analysis Service with Gemini/OpenAI via Emergent"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/llm_service.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Rebuilt from GitHub. LLM service uses EMERGENT_LLM_KEY. Needs testing with actual contract upload."
+##   - task: "Document upload and text extraction (PDF/DOCX)"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py; backend/utils.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Rebuilt from GitHub. Uses PyMuPDF for PDF and python-docx for DOCX extraction."
+##   - task: "Contract Review History (90-day retention)"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "medium"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Contract reviews saved with TTL indexes for 90-day retention."
+## frontend:
+##   - task: "Chat-based UI with document upload"
+##     implemented: true
+##     working: "NA"
+##     file: "frontend/src/App.js"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Rebuilt from GitHub. Chat UI with contract/proposal upload controls, Summary/Terms/Scope/History tabs."
+## metadata:
+##   created_by: "main_agent"
+##   version: "1.0"
+##   test_sequence: 1
+##   run_ui: false
+## test_plan:
+##   current_focus:
+##     - "Core API endpoints (health, upload, sessions, analyze)"
+##     - "Document upload and text extraction (PDF/DOCX)"
+##   stuck_tasks: []
+##   test_all: false
+##   test_priority: "high_first"
+## agent_communication:
+##   - agent: "main"
+##     message: "Rebuilt Contract Admin app from GitHub repo https://github.com/absnate/Contract-Admin-V2. Backend and frontend services running. Backend health check passing. Ready for testing."
 
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
