@@ -342,7 +342,20 @@ const ScopeView = ({ data }) => {
                     <Card key={idx} className={`overflow-hidden border-2 ${hasIssues(scope) ? 'border-red-300' : 'border-green-300'}`}>
                         {/* Scope Header */}
                         <div className={`px-4 py-3 border-b flex justify-between items-center ${hasIssues(scope) ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                            <span className="font-bold text-gray-900">Scope: {scope.scope_name}</span>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-900">Scope: {scope.scope_name}</span>
+                                {/* Show prices if available */}
+                                {(scope.proposal_price || scope.contract_price) && (
+                                    <div className="flex gap-4 text-xs mt-1">
+                                        {scope.proposal_price && (
+                                            <span className="text-green-700">Proposal: {scope.proposal_price}</span>
+                                        )}
+                                        {scope.contract_price && (
+                                            <span className="text-blue-700">Contract: {scope.contract_price}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             <span className={`px-2 py-1 rounded text-xs font-bold ${hasIssues(scope) ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
                                 {scope.overall_status || (hasIssues(scope) ? "Not Compliant" : "Compliant")}
                             </span>
