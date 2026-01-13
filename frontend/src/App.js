@@ -123,9 +123,36 @@ const SummaryView = ({ data }) => {
 
                     // Special styling for OCIP/CCIP
                     if (field.key === "ocip_ccip_status") {
-                        if (value?.toLowerCase().startsWith("yes")) {
+                        if (value?.toLowerCase().includes("specified") || value?.toLowerCase().startsWith("yes")) {
                             valueClass = "text-blue-700 font-semibold";
                             containerClass = "bg-blue-50 p-4 rounded border border-blue-200";
+                        }
+                    }
+
+                    // Special styling for Paid When Paid
+                    if (field.key === "paid_when_paid") {
+                        if (value?.toLowerCase().includes("detected")) {
+                            valueClass = "text-yellow-700 font-semibold";
+                            containerClass = "bg-yellow-50 p-4 rounded border border-yellow-200";
+                        }
+                    }
+
+                    // Special styling for Audit Clause
+                    if (field.key === "audit_clause") {
+                        if (value?.toLowerCase().includes("detected")) {
+                            valueClass = "text-orange-700 font-semibold";
+                            containerClass = "bg-orange-50 p-4 rounded border border-orange-200";
+                        }
+                    }
+
+                    // Special styling for QA/QC Program
+                    if (field.key === "qaqc_program") {
+                        if (value?.toLowerCase().includes("fee-based") || value?.toLowerCase().includes("fee based")) {
+                            valueClass = "text-red-700 font-bold";
+                            containerClass = "bg-red-50 p-4 rounded border border-red-200";
+                        } else if (value?.toLowerCase().includes("detected")) {
+                            valueClass = "text-yellow-700 font-semibold";
+                            containerClass = "bg-yellow-50 p-4 rounded border border-yellow-200";
                         }
                     }
 
