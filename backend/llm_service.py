@@ -101,6 +101,8 @@ PROMPT_TEMPLATES = {
             "parking": "...",
             "ocip_ccip_status": "...",
             "paid_when_paid": "Detected" | "Not specified in the contract",
+            "audit_clause": "Detected" | "Not specified in the contract",
+            "qaqc_program": "Detected - Fee-Based" | "Detected" | "Not specified in the contract",
             "insurance_compliance": "Compliant / Not Compliant / Cannot Be Confirmed",
             "insurance_notes": "Details of shortfall if Not Compliant"
          },
