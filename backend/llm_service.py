@@ -362,9 +362,21 @@ PROMPT_TEMPLATES = {
     
     7. **Project Start Date:** From contract or schedule. If not stated: "Not specified in the contract."
     
-    8. **Substantial Completion:** From contract or schedule. If not stated: "Not specified in the contract."
+    8. **Substantial Completion (Project Substantial Completion Date):** 
+        - **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
+          - "substantial completion", "substantial completion date"
+          - "project completion", "project completion date"
+          - "completion date", "date of completion"
+          - "project finish date", "finish date"
+          - "project end date", "end date"
+          - "final completion", "final completion date"
+          - "target completion", "scheduled completion"
+          - "contract completion", "contract completion date"
+        - Look in: Contract dates section, Schedule exhibits, Milestone sections, Project timeline
+        - Extract the specific date if found (e.g., "December 31, 2025", "06/30/2026")
+        - If not stated: "Not specified in the contract."
     
-    9. **Pay App Due Date:** 
+    9. **Pay App Due Date (DAY OF MONTH ONLY):** 
         - Look for payment application due dates, payment terms, pay app schedules, progress payment requirements
         - **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
           - "payment", "pay app", "pay application", "due date", "payment due"
@@ -377,7 +389,18 @@ PROMPT_TEMPLATES = {
           - Subsections under Payment articles (e.g., "F. the progress payment request is required...")
           - Schedule of Values sections
           - Payment procedure sections
-        - State verbatim (e.g., "Progress payment request required by the twentieth day of each month", "Net 30 from approved pay application")
+        - **OUTPUT FORMAT (DAY OF MONTH ONLY):**
+          - Extract ONLY the day of the month when payment is due
+          - Acceptable output examples:
+            - "25th of each month"
+            - "20th of each month"
+            - "15th"
+            - "20th"
+            - "25th"
+            - "Last day of each month"
+            - "End of month"
+          - Do NOT include full dates or payment terms like "Net 30"
+          - Focus on the recurring monthly due date for submitting pay applications
         - If not stated: "Not specified in the contract."
     
     10. **Retention %:** 
