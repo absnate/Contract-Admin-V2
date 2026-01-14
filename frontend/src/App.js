@@ -693,18 +693,23 @@ export default function App() {
   const saveCurrentReview = async () => {
     if (!sessionId) return;
     
+    // Auto-generate project name from contract filename
+    const autoProjectName = activeContract ? extractProjectName(activeContract.filename) : null;
+    const projectName = autoProjectName || analysisResult?.structured_data?.summary_data?.project_name || 'Untitled Review';
+    
     try {
       const res = await fetch(`${backendUrl}/api/contract-reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          project_name: analysisResult?.structured_data?.summary_data?.project_name,
+          project_name: projectName,
           messages: messages,
           summary_data: analysisResult?.structured_data?.summary_data,
           negotiation_summary: analysisResult?.structured_data?.negotiation_summary,
           scope_data: analysisResult?.structured_data?.scope_data,
-          analysis_result: analysisResult
+          analysis_result: analysisResult,
+          task_type: taskType
         })
       });
       const data = await res.json();
@@ -715,6 +720,26 @@ export default function App() {
     } catch (err) {
       console.error("Failed to save review", err);
     }
+  };
+
+  // Save current review and start a new one
+  const saveAndNewReview = async () => {
+    // Only save if there's something to save (has analysis or documents)
+    if (analysisResult || activeContract || activeProposal) {
+      await saveCurrentReview();
+    }
+    
+    // Clear active documents in the database
+    try {
+      await fetch(`${backendUrl}/api/documents/clear-active`, {
+        method: 'POST'
+      });
+    } catch (err) {
+      console.error("Failed to clear documents", err);
+    }
+    
+    // Create new session
+    await createNewSession();
   };
 
   const loadReviewFromHistory = async (reviewId) => {
