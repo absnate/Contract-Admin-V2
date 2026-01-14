@@ -656,6 +656,11 @@ export default function App() {
       setProposals([]);
       setActiveContract(null);
       setActiveProposal(null);
+      // Reset processing states
+      setIsProcessing(false);
+      setProcessingQueue([]);
+      setProcessingStats({ completed: 0, total: 0 });
+      setProcessingStatus({ stage: '', filename: '', progress: 0, message: '' });
     } catch (err) {
       console.error("Failed to create session", err);
     }
