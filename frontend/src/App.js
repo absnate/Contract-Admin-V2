@@ -845,9 +845,13 @@ export default function App() {
     }
   };
 
-  // Auto-save review when analysis completes
+  // Auto-save review when analysis completes (but NOT when loading from history)
   useEffect(() => {
-    if (analysisResult && sessionId) {
+    // Only auto-save if:
+    // 1. We have an analysis result
+    // 2. We have a session ID
+    // 3. We are NOT viewing a loaded review from history
+    if (analysisResult && sessionId && !loadedReviewId) {
       saveCurrentReview();
     }
   }, [analysisResult]);
