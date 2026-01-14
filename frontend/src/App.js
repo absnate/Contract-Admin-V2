@@ -71,9 +71,6 @@ const SummaryView = ({ data }) => {
         { key: "tax_status", label: "Tax Rate / Exempt" },
         { key: "parking", label: "Parking" },
         { key: "ocip_ccip_status", label: "OCIP / CCIP" },
-        { key: "paid_when_paid", label: "Paid When Paid" },
-        { key: "audit_clause", label: "Audit Clause" },
-        { key: "qaqc_program", label: "QA/QC Program" },
         { key: "insurance_compliance", label: "Insurance Compliance" }
     ];
 
