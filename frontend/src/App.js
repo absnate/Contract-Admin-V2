@@ -754,6 +754,12 @@ export default function App() {
       message: ''
     });
     
+    // Reset file inputs so they can accept new files
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+      input.value = '';
+    });
+    
     // Create new session
     await createNewSession();
   };
