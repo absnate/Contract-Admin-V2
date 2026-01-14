@@ -777,8 +777,15 @@ export default function App() {
       const res = await fetch(`${backendUrl}/api/contract-reviews/${reviewId}`);
       const review = await res.json();
       
-      // Load the review data into state
+      // IMPORTANT: Set loadedReviewId FIRST to prevent auto-save from triggering
+      // This flags that we're viewing a historical review, not creating a new one
       setLoadedReviewId(reviewId);
+      
+      // Clear current session to prevent any saves to wrong session
+      // Don't create new session - we're just viewing history
+      setSessionId(null);
+      
+      // Load messages
       setMessages(review.messages || []);
       
       // Reconstruct analysis result
@@ -798,11 +805,11 @@ export default function App() {
         setTaskType(review.task_type);
       }
       
-      // Load documents associated with the review
+      // Load documents associated with the review (display only, not active)
       setContracts(review.contracts || []);
       setProposals(review.proposals || []);
       
-      // Set active documents
+      // Set active documents for display
       const activeC = (review.contracts || []).find(d => d.is_active);
       const activeP = (review.proposals || []).find(d => d.is_active);
       setActiveContract(activeC || null);
@@ -814,7 +821,7 @@ export default function App() {
       // Show notification
       setMessages(prev => [...prev, { 
         role: 'system', 
-        content: `Loaded contract review: **${review.project_name || 'Untitled'}** (${review.days_remaining} days remaining)` 
+        content: `📂 Loaded review: **${review.project_name || 'Untitled'}** (${review.days_remaining} days remaining)\n\n_This is a read-only view. Click "Save & New Review" to start a new contract review._` 
       }]);
       
     } catch (err) {
