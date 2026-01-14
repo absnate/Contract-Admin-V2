@@ -980,6 +980,7 @@ PROMPT_TEMPLATES = {
        - Rule 6: Tax Exemption - IF tax exempt and certificate not provided → ACKNOWLEDGE
        - Rule 7: Bond - IF bond required or not required → ACKNOWLEDGE
        - Rule 8: Liquidated Damages - IF LDs included → MODIFY
+       - Rule 8A: Delay Damages / Schedule Shifting - IF delay damage language detected → MODIFY
        - Rule 11: Prevailing Wage - IF prevailing wage applies and docs missing → ACKNOWLEDGE
        - Rule 12: Retention - ONLY IF retention > 5% → MODIFY
        - Rule 13: SOV Breakouts - IF excessive SOV detail required → MODIFY
