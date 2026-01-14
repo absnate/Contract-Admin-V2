@@ -361,25 +361,26 @@ PROMPT_TEMPLATES = {
     
     8. **Substantial Completion (Project Substantial Completion Date):** 
         - **DETECTION KEYWORDS (Case-Insensitive, search ENTIRE document):**
-          - "substantial completion", "substantial completion date"
-          - "project completion", "project completion date"
-          - "completion date", "date of completion"
-          - **"Project Finish Date"**, "project finish date:"
-          - "finish date", "finish date:"
-          - "project end date", "end date"
-          - "final completion", "final completion date"
-          - "target completion", "scheduled completion"
-          - "contract completion", "contract completion date"
-          - "Estimated Completion", "Actual Completion"
-          - "Calendar days" (often followed by completion milestone)
-        - **CRITICAL SEARCH PATTERNS:**
-          - Look for "Project Finish Date: [DATE]" format (e.g., "Project Finish Date: 11/18/2026")
-          - Look for milestone tables with completion dates
-          - Look for "Substantial Completion (XXX Calendar days)" patterns
-          - Search Schedule exhibits and milestone sections
-        - **OUTPUT:** Extract the specific date if found (e.g., "11/18/2026", "December 31, 2025")
-        - If only duration given (e.g., "547 Calendar days"), state: "547 Calendar days from notice to proceed"
-        - If not stated: "Not specified in the contract."
+          - **"Project Finish Date"**, "project finish date:" (PRIMARY - check schedule section)
+          - "substantial completion date", "completion date"
+          - "project completion date", "date of completion"
+          - "finish date", "end date"
+          - "final completion date", "target completion date"
+          - "contract completion date", "scheduled completion date"
+        - **CRITICAL SEARCH LOCATIONS:**
+          - Schedule section/exhibit (often lower right corner of schedule)
+          - Look for "Project Finish Date: [DATE]" format
+          - Milestone tables with specific dates
+          - Project timeline sections
+        - **OUTPUT FORMAT (DATE ONLY - MANDATORY):**
+          - Extract ONLY an actual calendar date
+          - Acceptable formats: "11/18/2026", "November 18, 2026", "2026-11-18"
+          - **DO NOT INCLUDE:**
+            - Duration-based values (e.g., "547 Calendar days")
+            - Relative dates (e.g., "X days from notice to proceed")
+            - Milestone descriptions without dates
+          - If no specific date found, output: "Not specified in the contract."
+          - **NEVER output duration or calendar days - ONLY actual dates**
     
     9. **Pay App Due Date (DAY OF MONTH ONLY):** 
         - Look for payment application due dates, payment terms, pay app schedules, progress payment requirements
