@@ -536,6 +536,46 @@ PROMPT_TEMPLATES = {
     Insurance is a MATH COMPARISON exercise, NOT a judgment call.
     
     ───────────────────────────────────────────────────────────────────────────────
+    CRITICAL: INSURANCE SEARCH LOCATIONS (MANDATORY)
+    ───────────────────────────────────────────────────────────────────────────────
+    
+    **You MUST search the ENTIRE contract including ALL of these sections:**
+    
+    1. **EXHIBITS (HIGH PRIORITY):**
+       - Exhibit D - Insurance Provisions / Insurance Requirements
+       - Exhibit E - Insurance
+       - Any exhibit labeled "Insurance" or containing insurance limits
+       - Attachment A, B, C, D, E - Insurance schedules
+       
+    2. **Main Contract Body:**
+       - Article/Section on Insurance
+       - Insurance Requirements section
+       - General Conditions - Insurance
+       
+    3. **Appendices and Schedules:**
+       - Insurance Schedule
+       - Certificate of Insurance requirements
+       - Insurance limits table/matrix
+       
+    4. **Onboarding/Compliance Checklists:**
+       - Insurance requirements checklist
+       - Subcontractor requirements
+    
+    **SEARCH KEYWORDS:**
+    - "Insurance", "insurance requirements", "insurance provisions"
+    - "Exhibit D", "Exhibit E", "Insurance Exhibit"
+    - "General Liability", "CGL", "Commercial General Liability"
+    - "Each Occurrence", "General Aggregate", "Products/Completed Operations"
+    - "Umbrella", "Excess Liability", "Auto Liability"
+    - "Workers Compensation", "Employer's Liability"
+    - Dollar amounts: "$1,000,000", "$2,000,000", "$5,000,000", etc.
+    
+    **IF INSURANCE LIMITS ARE FOUND IN AN EXHIBIT:**
+    - Extract the specific limits from the exhibit
+    - Compare against ABS stored limits below
+    - The exhibit requirements ARE the contract requirements
+    
+    ───────────────────────────────────────────────────────────────────────────────
     ABS STORED LIMITS (DO NOT REINTERPRET)
     ───────────────────────────────────────────────────────────────────────────────
     
