@@ -648,7 +648,7 @@ export default function App() {
       });
       const data = await res.json();
       setSessionId(data.session_id);
-      setMessages([{ role: 'assistant', content: `Hello! I'm your ABS Contract Admin Agent. I'm ready to help you review documents for **${taskType.replace(/_/g, ' ')}**. Upload a contract to get started.` }]);
+      setMessages([{ role: 'assistant', content: `Hello, I'm Emilee, your Contract Administrator. I review contracts. You upload them. We both win.` }]);
       setAnalysisResult(null);
       setLoadedReviewId(null);
       // Clear documents for new session
