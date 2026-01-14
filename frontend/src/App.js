@@ -823,31 +823,22 @@ export default function App() {
   };
 
   const deleteReviewFromHistory = async (reviewId) => {
-    console.log("deleteReviewFromHistory called with:", reviewId);
-    
-    const confirmed = window.confirm("Are you sure you want to delete this contract review?");
-    console.log("User confirmed:", confirmed);
-    
-    if (!confirmed) return;
+    // Confirm deletion
+    if (!window.confirm("Delete this contract review?")) {
+      return;
+    }
     
     try {
-      console.log("Sending DELETE request to:", `${backendUrl}/api/contract-reviews/${reviewId}`);
       const response = await fetch(`${backendUrl}/api/contract-reviews/${reviewId}`, {
         method: 'DELETE'
       });
-      
-      console.log("DELETE response status:", response.status);
       
       if (!response.ok) {
         throw new Error(`Delete failed: ${response.status}`);
       }
       
-      const result = await response.json();
-      console.log("DELETE result:", result);
-      
       // Refresh history after successful delete
       await loadHistory();
-      console.log("History refreshed");
     } catch (err) {
       console.error("Failed to delete review", err);
       alert("Failed to delete review. Please try again.");
