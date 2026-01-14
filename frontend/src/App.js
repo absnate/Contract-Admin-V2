@@ -704,7 +704,11 @@ export default function App() {
   };
 
   const saveCurrentReview = async () => {
-    if (!sessionId) return;
+    // Don't save if no session ID or if we're viewing a loaded review
+    if (!sessionId || loadedReviewId) {
+      console.log("Skipping save - no session or viewing loaded review");
+      return;
+    }
     
     // Auto-generate project name from contract filename
     const autoProjectName = activeContract ? extractProjectName(activeContract.filename) : null;
