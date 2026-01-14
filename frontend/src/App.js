@@ -126,33 +126,6 @@ const SummaryView = ({ data }) => {
                         }
                     }
 
-                    // Special styling for Paid When Paid
-                    if (field.key === "paid_when_paid") {
-                        if (value?.toLowerCase().includes("detected")) {
-                            valueClass = "text-yellow-700 font-semibold";
-                            containerClass = "bg-yellow-50 p-4 rounded border border-yellow-200";
-                        }
-                    }
-
-                    // Special styling for Audit Clause
-                    if (field.key === "audit_clause") {
-                        if (value?.toLowerCase().includes("detected")) {
-                            valueClass = "text-orange-700 font-semibold";
-                            containerClass = "bg-orange-50 p-4 rounded border border-orange-200";
-                        }
-                    }
-
-                    // Special styling for QA/QC Program
-                    if (field.key === "qaqc_program") {
-                        if (value?.toLowerCase().includes("fee-based") || value?.toLowerCase().includes("fee based")) {
-                            valueClass = "text-red-700 font-bold";
-                            containerClass = "bg-red-50 p-4 rounded border border-red-200";
-                        } else if (value?.toLowerCase().includes("detected")) {
-                            valueClass = "text-yellow-700 font-semibold";
-                            containerClass = "bg-yellow-50 p-4 rounded border border-yellow-200";
-                        }
-                    }
-
                     return (
                         <div key={field.key} className={containerClass}>
                             <div className="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">
