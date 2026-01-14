@@ -519,20 +519,24 @@ const HistoryView = ({ reviews, onLoadReview, onDeleteReview, onRefresh, isLoadi
                                     </div>
                                     <div className="flex items-center gap-2 ml-4">
                                         <button
+                                            type="button"
                                             onClick={() => onLoadReview(review.review_id)}
                                             className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                                         >
                                             Load
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
+                                                console.log("Delete clicked for:", review.review_id);
                                                 onDeleteReview(review.review_id);
                                             }}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                                             title="Delete review"
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </div>
