@@ -1200,8 +1200,8 @@ export default function App() {
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
-            <Button variant="outline" className="w-full justify-start gap-2 mb-4" onClick={createNewSession}>
-                <MessageSquare size={16} /> New Chat
+            <Button variant="outline" className="w-full justify-start gap-2 mb-4 bg-green-50 hover:bg-green-100 border-green-300 text-green-700" onClick={saveAndNewReview}>
+                <Save size={16} /> Save & New Review
             </Button>
 
             {/* Task Type - Moved to top */}
