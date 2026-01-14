@@ -661,6 +661,21 @@ export default function App() {
     }
   };
 
+  // Extract shortened project name from contract filename (number and name only)
+  const extractProjectName = (filename) => {
+    if (!filename) return null;
+    // Remove file extension
+    let name = filename.replace(/\.(pdf|docx|doc)$/i, '');
+    // Try to extract project number and name (e.g., "18426 Grand County EMS" from "18426 Grand County EMS - ABS Subcontract - Received.pdf")
+    const match = name.match(/^(\d+)\s+([^-–]+)/);
+    if (match) {
+      return `${match[1]} ${match[2].trim()}`;
+    }
+    // If no number found, just return first part before dash
+    const firstPart = name.split(/[-–]/)[0].trim();
+    return firstPart || name;
+  };
+
   // History functions
   const loadHistory = async () => {
     setIsHistoryLoading(true);
