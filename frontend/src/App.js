@@ -819,16 +819,22 @@ export default function App() {
   };
 
   const deleteReviewFromHistory = async (reviewId) => {
-    if (!confirm("Are you sure you want to delete this contract review?")) return;
+    if (!window.confirm("Are you sure you want to delete this contract review?")) return;
     
     try {
-      await fetch(`${backendUrl}/api/contract-reviews/${reviewId}`, {
+      const response = await fetch(`${backendUrl}/api/contract-reviews/${reviewId}`, {
         method: 'DELETE'
       });
-      // Refresh history
-      loadHistory();
+      
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.status}`);
+      }
+      
+      // Refresh history after successful delete
+      await loadHistory();
     } catch (err) {
       console.error("Failed to delete review", err);
+      alert("Failed to delete review. Please try again.");
     }
   };
 
