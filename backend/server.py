@@ -285,6 +285,22 @@ async def delete_document(file_id: str):
     
     return {"status": "deleted", "file_id": file_id}
 
+@app.post("/api/documents/clear-active")
+async def clear_active_documents():
+    """Clear all active documents to start fresh for a new review."""
+    try:
+        # Deactivate all active documents (don't delete, just mark inactive)
+        result = await db.documents.update_many(
+            {"is_active": True},
+            {"$set": {"is_active": False}}
+        )
+        return {
+            "status": "cleared",
+            "documents_deactivated": result.modified_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear documents: {str(e)}")
+
 @app.post("/api/analyze")
 async def run_analysis(request: AnalysisRequest):
     """Run a specific analysis task on a file.
