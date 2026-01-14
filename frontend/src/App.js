@@ -525,8 +525,12 @@ const HistoryView = ({ reviews, onLoadReview, onDeleteReview, onRefresh, isLoadi
                                             Load
                                         </button>
                                         <button
-                                            onClick={() => onDeleteReview(review.review_id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteReview(review.review_id);
+                                            }}
                                             className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Delete review"
                                         >
                                             <Trash2 size={14} />
                                         </button>
