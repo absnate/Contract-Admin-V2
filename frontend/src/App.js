@@ -738,6 +738,17 @@ export default function App() {
       console.error("Failed to clear documents", err);
     }
     
+    // Reset all processing states
+    setIsProcessing(false);
+    setProcessingQueue([]);
+    setProcessingStats({ completed: 0, total: 0 });
+    setProcessingStatus({ 
+      stage: '', 
+      filename: '',
+      progress: 0,
+      message: ''
+    });
+    
     // Create new session
     await createNewSession();
   };
